@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Domino;
 using UnityEngine;
-// using Virtence.VText;
+using Virtence.VText;
 using static Domino.Instantiator;
 
 namespace Domino {
@@ -95,8 +95,8 @@ namespace Domino {
     // Object with a transform for the mesh, for example for rotating it.
     // Lives inside this.gameObject.
     // Specified by unity.
-    // public VText frontObject;
-    // public VText outlineObject;
+    public VText frontObject;
+    public VText outlineObject;
 
     Instantiator instantiator;
 
@@ -126,32 +126,20 @@ namespace Domino {
       Rebuild();
 
       this.renderPriority = symbolDescription.renderPriority;
-      // frontObject.transform.SetParent(gameObject.transform, false);
-      // outlineObject.transform.SetParent(gameObject.transform, false);
-      //
-      // if (!originFront) {
-      //   frontObject.transform.localPosition = new Vector3(0, 0, 1);
-      //   outlineObject.transform.localPosition = new Vector3(0, 0, 1);
-      // }
+      frontObject.transform.SetParent(gameObject.transform, false);
+      outlineObject.transform.SetParent(gameObject.transform, false);
+      
+      if (!originFront) {
+        frontObject.transform.localPosition = new Vector3(0, 0, 1);
+        outlineObject.transform.localPosition = new Vector3(0, 0, 1);
+      }
 
-      // InnerSetSymbolId(symbolDescription.symbol.symbolId, false);
-      // InnerSetExtruded(symbolDescription.extruded, false);
-      // InnerSetOutline(symbolDescription.symbol.isOutlined, symbolDescription.symbol.outlineColor);
       SetFrontColor(symbolDescription.symbol.frontColor);
       SetSidesColor(symbolDescription.sidesColor);
       InnerSetScale(symbolDescription.symbol.scale);
       instanceAlive = true;
     }
-
-
-    // public ExtrudedSymbolDescription GetDescription() {
-    //   return new ExtrudedSymbolDescription(
-    //       renderPriority,
-    //       new SymbolDescription(
-    //           symbolId, frontColor, rotationDegrees, scale, isOutlined),
-    //       extruded, sidesColor);
-    // }
-
+    
     public void Destruct() {
       CheckInstanceAlive();
       Destroy(gameObject);
@@ -164,24 +152,13 @@ namespace Domino {
       }
     }
 
-    // public void SetDescription(ExtrudedSymbolDescription description) {
-    //   CheckInstanceAlive();
-    //   symbolId = description.symbol.symbolId;
-    //   extruded = description.extruded;
-    //   isOutlined = description.symbol.isOutlined;
-    //   frontColor = description.symbol.frontColor;
-    //   sidesColor = description.sidesColor;
-    //   rotationDegrees = description.symbol.rotationDegrees;
-    //   scale = description.symbol.scale;
-    // }
-
     private void InnerSetSymbolId(SymbolId newSymbolId, bool rebuild) {
-      // frontObject.MeshParameter.FontName = symbolId.fontName + ".simplified.ttf";
-      // frontObject.SetText(char.ConvertFromUtf32(symbolId.unicode));
-      // if (isOutlined) {
-      //   outlineObject.MeshParameter.FontName = symbolId.fontName + ".expanded.ttf";
-      //   outlineObject.SetText(char.ConvertFromUtf32(symbolId.unicode));
-      // }
+      frontObject.MeshParameter.FontName = symbolId.fontName + ".simplified.ttf";
+      frontObject.SetText(char.ConvertFromUtf32(symbolId.unicode));
+      if (isOutlined) {
+        outlineObject.MeshParameter.FontName = symbolId.fontName + ".expanded.ttf";
+        outlineObject.SetText(char.ConvertFromUtf32(symbolId.unicode));
+      }
       symbolId = newSymbolId;
       if (rebuild) {
         Rebuild();
@@ -189,10 +166,10 @@ namespace Domino {
     }
 
     private void Rebuild() {
-      // frontObject.Rebuild();
-      // if (isOutlined) {
-      //   outlineObject.Rebuild();
-      // }
+      frontObject.Rebuild();
+      if (isOutlined) {
+        outlineObject.Rebuild();
+      }
     }
 
     private void InnerSetExtruded(bool isExtruded, bool rebuild) {
@@ -204,33 +181,33 @@ namespace Domino {
     }
 
     private void RefreshDepth(bool rebuild) {
-      // frontObject.MeshParameter.Depth = (!isOutlined && isExtruded) ? 1 : 0;
-      // outlineObject.MeshParameter.Depth = (isOutlined && isExtruded) ? 1 : 0;
-      // if (rebuild) {
-      //   Rebuild();
-      // }
+      frontObject.MeshParameter.Depth = (!isOutlined && isExtruded) ? 1 : 0;
+      outlineObject.MeshParameter.Depth = (isOutlined && isExtruded) ? 1 : 0;
+      if (rebuild) {
+        Rebuild();
+      }
     }
 
     private void InnerSetOutline(bool isOutlined, IVector4Animation newOutlineColor, bool rebuild) {
       this.isOutlined = isOutlined;
-      // outlineObject.enabled = isOutlined;
+      outlineObject.enabled = isOutlined;
       RefreshDepth(false);
       if (rebuild) {
         Rebuild();
       }
-      // ColorAnimator.MakeOrGetFrom(clock, outlineObject.gameObject).Set(newOutlineColor, renderPriority);
+      ColorAnimator.MakeOrGetFrom(clock, outlineObject.gameObject).Set(newOutlineColor, renderPriority);
       outlineColor = newOutlineColor;
     }
 
     public void SetFrontColor(IVector4Animation newColor) {
-      // ColorAnimator.MakeOrGetFrom(clock, frontObject.gameObject).Set(newColor, renderPriority);
+      ColorAnimator.MakeOrGetFrom(clock, frontObject.gameObject).Set(newColor, renderPriority);
       
       frontColor = newColor;
     }
 
     public void SetSidesColor(IVector4Animation newColor) {
       // ColorAnimator.MakeOrGetFrom(clock, sidesObject).Set(newColor, renderPriority);
-      // sidesColor = newColor;
+      sidesColor = newColor;
       Debug.LogWarning("impl side color");
     }
 
@@ -240,8 +217,8 @@ namespace Domino {
     }
 
     private void InnerSetScale(float newScale) {
-      // frontObject.transform.localScale = new Vector3(newScale, newScale, newScale);
-      // outlineObject.transform.localScale = new Vector3(newScale, newScale, newScale);
+      frontObject.transform.localScale = new Vector3(newScale, newScale, newScale);
+      outlineObject.transform.localScale = new Vector3(newScale, newScale, newScale);
       if (newScale > 9) {
         Debug.Log("yeah over 9");
       }
@@ -304,25 +281,25 @@ namespace Domino {
     }
 
     public void FadeInThenOut(long inDurationMs, long outDurationMs) {
-      // var frontAnimator = ColorAnimator.MakeOrGetFrom(clock, frontObject.gameObject);
-      // frontAnimator.Set(
-      //     FadeAnimator.FadeInThenOut(frontAnimator.Get(), clock.GetTimeMs(), inDurationMs, outDurationMs),
-      //     renderPriority);
-      // var frontOutlineAnimator = ColorAnimator.MakeOrGetFrom(clock, outlineObject.gameObject);
-      // frontOutlineAnimator.Set(
-      //     FadeAnimator.FadeInThenOut(frontOutlineAnimator.Get(), clock.GetTimeMs(), inDurationMs, outDurationMs),
-      //     renderPriority);
+      var frontAnimator = ColorAnimator.MakeOrGetFrom(clock, frontObject.gameObject);
+      frontAnimator.Set(
+          FadeAnimator.FadeInThenOut(frontAnimator.Get(), clock.GetTimeMs(), inDurationMs, outDurationMs),
+          renderPriority);
+      var frontOutlineAnimator = ColorAnimator.MakeOrGetFrom(clock, outlineObject.gameObject);
+      frontOutlineAnimator.Set(
+          FadeAnimator.FadeInThenOut(frontOutlineAnimator.Get(), clock.GetTimeMs(), inDurationMs, outDurationMs),
+          renderPriority);
     }
 
     public void Fade(long durationMs) {
-      // var frontAnimator = ColorAnimator.MakeOrGetFrom(clock, frontObject.gameObject);
-      // frontAnimator.Set(
-      //   FadeAnimator.Fade(frontAnimator.Get(), clock.GetTimeMs(), durationMs),
-      //   renderPriority);
-      // var frontOutlineAnimator = ColorAnimator.MakeOrGetFrom(clock, outlineObject.gameObject);
-      // frontOutlineAnimator.Set(
-      //   FadeAnimator.Fade(frontOutlineAnimator.Get(), clock.GetTimeMs(), durationMs),
-      //   renderPriority);
+      var frontAnimator = ColorAnimator.MakeOrGetFrom(clock, frontObject.gameObject);
+      frontAnimator.Set(
+        FadeAnimator.Fade(frontAnimator.Get(), clock.GetTimeMs(), durationMs),
+        renderPriority);
+      var frontOutlineAnimator = ColorAnimator.MakeOrGetFrom(clock, outlineObject.gameObject);
+      frontOutlineAnimator.Set(
+        FadeAnimator.Fade(frontOutlineAnimator.Get(), clock.GetTimeMs(), durationMs),
+        renderPriority);
     }
   }
 }

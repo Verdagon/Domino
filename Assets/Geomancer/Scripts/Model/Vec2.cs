@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace Geomancer.Model {
-public class Vec2 : IComparable<Vec2> {
+public struct Vec2 : IComparable<Vec2> {
   public static readonly string NAME = "Vec2";
   public class EqualityComparer : IEqualityComparer<Vec2> {
     public bool Equals(Vec2 a, Vec2 b) {
@@ -34,27 +34,10 @@ public class Vec2 : IComparable<Vec2> {
 
   }
   public static bool operator==(Vec2 a, Vec2 b) {
-    if (object.ReferenceEquals(a, null))
-      return object.ReferenceEquals(b, null);
     return a.Equals(b);
   }
   public static bool operator!=(Vec2 a, Vec2 b) {
-    if (object.ReferenceEquals(a, null))
-      return !object.ReferenceEquals(b, null);
     return !a.Equals(b);
-  }
-  public override bool Equals(object obj) {
-    if (obj == null) {
-      return false;
-    }
-    if (!(obj is Vec2)) {
-      return false;
-    }
-    var that = obj as Vec2;
-    return true
-               && x.Equals(that.x)
-        && y.Equals(that.y)
-        ;
   }
   public override int GetHashCode() {
     return GetDeterministicHashCode();
