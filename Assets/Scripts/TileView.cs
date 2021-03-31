@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using Virtence.VText;
 
@@ -119,6 +120,9 @@ namespace Domino {
     private ExtrudedSymbolDescription maybeOverlay;
     private SymbolId tileSymbolId;
     private float tileRotationDegrees;
+
+    // private Task<Mesh> meshTask;
+    
     // private float tileScale;
     // private OutlineMode tileOutlineMode;
     // private IVector4Animation tileOutlineColor;
@@ -319,6 +323,13 @@ namespace Domino {
         tsv.SetSidesColor(sideColor);
       }
     }
+
+    private static void MaybeSetMesh(GameObject gameObject, Mesh mesh) {
+      // Check if its been destroyed
+      if (gameObject != null) {
+        gameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
+      }
+    }
     
     public void SetFeature(ExtrudedSymbolDescription maybeFeature) {
       if (this.maybeFeature != null) {
@@ -326,27 +337,95 @@ namespace Domino {
       }
       this.maybeFeature = maybeFeature;
       if (this.maybeFeature != null) {
-        GameObject glyph = Instantiate(Resources.Load("VText")) as GameObject;
-        VText vtext = glyph.GetComponent<VText>();
-        vtext.MeshParameter.FontName = "AthSymbolsSimplified.ttf";
-        vtext.SetText("b");
-        vtext.RenderParameter.Materials = new[] {loader.white, loader.white, loader.white};
-        vtext.Rebuild();
-        glyph.transform.SetParent(gameObject.transform, false);
-        glyph.transform.localPosition = new Vector3(0, 0.30f, -0.001f);
-        glyph.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
-        glyph.transform.localScale = new Vector3(0.7f, 0.7f, 1);
+        var symbolId = new SymbolId("AthSymbols", char.ConvertToUtf32("b", 0));
+        float lift = 0.04f;
+        float scale = 0.7f;
+        float forward = 0.2f;
         
-        GameObject glyph2 = Instantiate(Resources.Load("VText")) as GameObject;
-        VText vtext2 = glyph2.GetComponent<VText>();
-        vtext2.MeshParameter.FontName = "AthSymbolsExpanded.ttf";
-        vtext2.SetText("b");
-        vtext2.RenderParameter.Materials = new[] {loader.black, loader.black, loader.black};
-        vtext2.Rebuild();
-        glyph2.transform.SetParent(gameObject.transform, false);
-        glyph2.transform.localPosition = new Vector3(0, 0.30f, 0);
-        glyph2.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
-        glyph2.transform.localScale = new Vector3(0.7f, 0.7f, 1);
+        var frontGlyphGameObject = loader.NewQuad();
+        frontGlyphGameObject.GetComponent<MeshRenderer>().sharedMaterial = loader.white;
+        frontGlyphGameObject.transform.SetParent(gameObject.transform, false);
+        frontGlyphGameObject.transform.localPosition = new Vector3(-.5f * scale, lift, -forward);
+        frontGlyphGameObject.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
+        frontGlyphGameObject.transform.localScale = new Vector3(scale, scale, 1);
+        loader.getMeshMaybeAsync(new VTextParameters(symbolId, false, false)).OnComplete +=
+            mesh => MaybeSetMesh(frontGlyphGameObject, mesh);
+        
+        var outlineGlyphGameObject = loader.NewQuad();
+        outlineGlyphGameObject.GetComponent<MeshRenderer>().sharedMaterial = loader.black;
+        outlineGlyphGameObject.transform.SetParent(gameObject.transform, false);
+        outlineGlyphGameObject.transform.localPosition = new Vector3(-.5f * scale, lift, -forward + 0.001f);
+        outlineGlyphGameObject.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
+        outlineGlyphGameObject.transform.localScale = new Vector3(scale, scale, 1);
+        loader.getMeshMaybeAsync(new VTextParameters(symbolId, true, false)).OnComplete +=
+            mesh => MaybeSetMesh(outlineGlyphGameObject, mesh);
+        
+        
+        // var thing = loader.atMesh;
+        
+        // bool expanded = false;
+        // var glowWhite = loader.glowWhite;
+        // var symbolId = new SymbolId("AthSymbols", char.ConvertToUtf32("b", 0));
+        // GameObject vtextGameObject = Instantiate(Resources.Load("VText")) as GameObject;
+        // VText vtext = vtextGameObject.GetComponent<VText>();
+        // vtext.MeshParameter.FontName = symbolId.fontName + (expanded ? "Expanded.ttf" : "Simplified.ttf");
+        // vtext.SetText(char.ConvertFromUtf32(symbolId.unicode));
+        // vtext.RenderParameter.Materials = new[] {glowWhite, glowWhite, glowWhite};
+        // vtext.Rebuild();
+        // vtext.TextRenderingFinished += (s, a) => {
+        //   var vtextMesh = vtext.GetComponentInChildren<MeshFilter>().sharedMesh;
+        //   Asserts.Assert(vtextMesh != null);
+        //
+        //   var mesh = new Mesh();
+        //   mesh.SetVertices(vtextMesh.vertices);
+        //   mesh.SetNormals(vtextMesh.normals);
+        //   mesh.SetTriangles(vtextMesh.GetTriangles(0), 0);
+        //   mesh.RecalculateNormals();
+        //   mesh.RecalculateBounds();
+        //   mesh.RecalculateTangents();
+        //
+        //   Debug.Log("Finished loading symbol! tris: " + mesh.triangles.Length);
+        //   // bool didSet = promise.TrySetResult(mesh);
+        //   // Asserts.Assert(didSet);
+        //   // Destroy(vtextGameObject);
+        //   
+        //   var blark = loader.NewQuad();
+        //   float lift = 0;
+        //   float scale = 0.7f;
+        //   // Debug.Log("Assigning shared mesh! " + meshTask.Result.triangles.Length);
+        //   blark.GetComponent<MeshFilter>().sharedMesh = mesh;
+        //   Asserts.Assert(blark.GetComponent<MeshFilter>().sharedMesh != null);
+        //   blark.transform.SetParent(gameObject.transform, false);
+        //   blark.transform.localPosition = new Vector3(-.5f * scale, lift, -0.001f);
+        //   blark.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
+        //   blark.transform.localScale = new Vector3(scale, scale, 1);
+        //   // meshTask = null;
+        // };
+        // // map.Add(symbolId, promise.Task);
+
+        
+
+        // GameObject glyph = Instantiate(Resources.Load("VText")) as GameObject;
+        // VText vtext = glyph.GetComponent<VText>();
+        // vtext.MeshParameter.FontName = "AthSymbolsSimplified.ttf";
+        // vtext.SetText("b");
+        // vtext.RenderParameter.Materials = new[] {loader.glowWhite, loader.glowWhite, loader.glowWhite};
+        // vtext.Rebuild();
+        // glyph.transform.SetParent(gameObject.transform, false);
+        // glyph.transform.localPosition = new Vector3(0, 0.30f, -0.001f);
+        // glyph.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
+        // glyph.transform.localScale = new Vector3(0.7f, 0.7f, 1);
+        //
+        // GameObject glyph2 = Instantiate(Resources.Load("VText")) as GameObject;
+        // VText vtext2 = glyph2.GetComponent<VText>();
+        // vtext2.MeshParameter.FontName = "AthSymbolsExpanded.ttf";
+        // vtext2.SetText("b");
+        // vtext2.RenderParameter.Materials = new[] {loader.black, loader.black, loader.black};
+        // vtext2.Rebuild();
+        // glyph2.transform.SetParent(gameObject.transform, false);
+        // glyph2.transform.localPosition = new Vector3(0, 0.30f, 0);
+        // glyph2.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
+        // glyph2.transform.localScale = new Vector3(0.7f, 0.7f, 1);
 
         // featureSymbolView = instantiator.CreateSymbolView(clock, true, this.maybeFeature);
         // featureSymbolView.gameObject.transform.localPosition = new Vector3(0, .28f, .15f);
@@ -507,6 +586,24 @@ namespace Domino {
     // public void Start() {
     //   if (!initialized) {
     //     throw new Exception("TileView component not initialized!");
+    //   }
+    // }
+
+    // public void Update() {
+    //   if (meshTask != null) {
+    //     if (meshTask.IsCompleted) {
+    //       var blark = loader.NewQuad();
+    //       float lift = 0;
+    //       float scale = 0.7f;
+    //       Debug.Log("Assigning shared mesh! " + meshTask.Result.triangles.Length);
+    //       blark.GetComponent<MeshFilter>().sharedMesh = meshTask.Result;
+    //       Asserts.Assert(blark.GetComponent<MeshFilter>().sharedMesh != null);
+    //       blark.transform.SetParent(gameObject.transform, false);
+    //       blark.transform.localPosition = new Vector3(-.5f * scale, lift, -0.001f);
+    //       blark.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
+    //       blark.transform.localScale = new Vector3(scale, scale, 1);
+    //       meshTask = null;
+    //     }
     //   }
     // }
   }

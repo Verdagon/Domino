@@ -171,10 +171,12 @@ namespace Domino {
         // If false, z=0 will be the back of the symbol (only really makes sense for extruded symbols).
         bool originFront,
         ExtrudedSymbolDescription symbolDescription) {
-      var symbolGameObject = Instantiate(glyphPrefab);
-      var symbolView = symbolGameObject.GetComponent<SymbolView>();
-      symbolView.Init(clock, this, originFront, symbolDescription);
-      return symbolView;
+      Asserts.Assert(false);
+      return null;
+      // var symbolGameObject = Instantiate(glyphPrefab);
+      // var symbolView = symbolGameObject.GetComponent<SymbolView>();
+      // symbolView.Init(clock, this, originFront, symbolDescription);
+      // return symbolView;
     }
 
     public SymbolBarView CreateSymbolBarView(

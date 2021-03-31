@@ -1,24 +1,101 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Domino;
 using Geomancer;
 using Geomancer.Model;
 using UnityEngine;
 using Virtence.VText;
 
+public class SimpleFuture<T> {
+  public delegate void IOnComplete(T value);
+  public event IOnComplete OnComplete;
+
+  public void Resolve(T value) {
+    OnComplete.Invoke(value);
+  }
+}
+
 public interface ILoader {
   Material white { get; }
   Material black { get; }
   Material glowWhite { get; }
+  SimpleFuture<Mesh> getMeshMaybeAsync(VTextParameters symbolId);
   GameObject NewEmptyGameObject();
   GameObject NewEmptyGameObject(Vector3 position, Quaternion rotation);
   GameObject NewQuad();
 }
 
+public struct VTextParameters {
+  public readonly SymbolId symbolId;
+  public readonly bool expanded;
+  public readonly bool extruded;
+
+  public VTextParameters(
+      SymbolId symbolId,
+      bool expanded,
+      bool extruded) {
+    this.symbolId = symbolId;
+    this.expanded = expanded;
+    this.extruded = extruded;
+  }
+
+  public override int GetHashCode() {
+    return symbolId.GetHashCode() + (expanded ? 47 : 0) + (extruded ? 31 : 0);
+  }
+}
+
 public class Root : MonoBehaviour, ILoader {
   private Camera camera;
   private Canvas canvas;
+
+  private Dictionary<VTextParameters, SimpleFuture<Mesh>> vtextParametersToMesh;
+
+  public SimpleFuture<Mesh> getMeshMaybeAsync(VTextParameters parameters) {
+    if (vtextParametersToMesh.TryGetValue(parameters, out SimpleFuture<Mesh> value)) {
+      return value;
+    }
+    
+    var promise = new SimpleFuture<Mesh>();
+    GameObject vtextGameObject = Instantiate(Resources.Load("VText")) as GameObject;
+    if (vtextGameObject == null) {
+      Debug.LogError("Couldn't instantiate VText!");
+      return promise;
+    }
+    bool finished = false;
+    VText vtext = vtextGameObject.GetComponent<VText>();
+    vtext.MeshParameter.FontName = parameters.symbolId.fontName + (parameters.expanded ? "Expanded.ttf" : "Simplified.ttf");
+    vtext.SetText(char.ConvertFromUtf32(parameters.symbolId.unicode));
+    vtext.RenderParameter.Materials = new[] {black, black, black};
+    vtext.MeshParameter.Depth = parameters.extruded ? 1 : 0;
+    vtext.Rebuild();
+    vtext.TextRenderingFinished += (s, a) => {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      
+      var vtextMesh = vtext.GetComponentInChildren<MeshFilter>().sharedMesh;
+      
+      var mesh = new Mesh();
+      mesh.SetVertices(vtextMesh.vertices);
+      mesh.SetNormals(vtextMesh.normals);
+      mesh.SetTriangles(vtextMesh.GetTriangles(0), 0);
+      mesh.RecalculateNormals();
+      mesh.RecalculateBounds();
+      mesh.RecalculateTangents();
+      
+      Debug.Log("Finished loading symbol! tris: " + mesh.triangles.Length);
+      promise.Resolve(mesh);
+      // promise.OnComplete(mesh);
+      // Asserts.Assert(didSet);
+      // Destroy(vtextGameObject);
+    };
+    vtextParametersToMesh.Add(parameters, promise);
+    
+    return promise;
+  }
 
   public Material white { get; private set; }
   public Material black { get; private set; }
@@ -37,6 +114,8 @@ public class Root : MonoBehaviour, ILoader {
     camera = GetComponentInChildren<Camera>();
     canvas = GetComponentInChildren<Canvas>();
 
+    vtextParametersToMesh = new Dictionary<VTextParameters, SimpleFuture<Mesh>>();
+
     white = Instantiate(Resources.Load("White")) as Material;
     white.color = Color.white;
     white.enableInstancing = true;
@@ -44,15 +123,19 @@ public class Root : MonoBehaviour, ILoader {
     glowWhite = Instantiate(Resources.Load("White")) as Material;
     glowWhite.color = Color.white;
     glowWhite.enableInstancing = true;
-    glowWhite.SetColor("_EmissionColor", new Vector4(1,1,1,0) * 1.5f);
+    glowWhite.EnableKeyword("_EMISSION");
+    glowWhite.SetColor("_EmissionColor", new Vector4(1,1,1,1));
 
     black = Instantiate(Resources.Load("White")) as Material;
     black.color = Color.black;
     white.enableInstancing = true;
     
-    var clock = new SlowableTimerClock(1.0f);
-    
+    doThings();
+  }
 
+  void doThings() {
+    
+    var clock = new SlowableTimerClock(1.0f);
 
     var tileObjects = new List<GameObject>();
     var outlineObjects = new List<GameObject>();
@@ -121,7 +204,7 @@ public class Root : MonoBehaviour, ILoader {
                   new ExtrudedSymbolDescription(
                       RenderPriority.SYMBOL,
                       new SymbolDescription(
-                          new SymbolId("AthSymbols.ttf", 0x002B),
+                          new SymbolId("AthSymbols", 0x002B),
                           Vector4Animation.Color(.8f, 0, .8f, 1.5f),
                           0,
                           1,
