@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Domino {
+  
   public class TileDescription {
     public readonly float elevationStepHeight;
     public readonly float tileRotationDegrees;
     public readonly int depth; // basically elevation
-    public readonly ExtrudedSymbolDescription tileSymbolDescription;
+    public readonly IVector4Animation topColor;
+    public readonly IVector4Animation sideColor;
     public readonly ExtrudedSymbolDescription maybeOverlaySymbolDescription;
     public readonly ExtrudedSymbolDescription maybeFeatureSymbolDescription;
     public readonly List<(ulong, ExtrudedSymbolDescription)> itemSymbolDescriptionByItemId;
@@ -16,29 +18,32 @@ namespace Domino {
         float elevationStepHeight,
         float tileRotationDegrees,
         int depth,
-        ExtrudedSymbolDescription tileSymbolDescription,
+        IVector4Animation topColor,
+        IVector4Animation sideColor,
         ExtrudedSymbolDescription maybeOverlaySymbolDescription,
         ExtrudedSymbolDescription maybeFeatureSymbolDescription,
         List<(ulong, ExtrudedSymbolDescription)> itemSymbolDescriptionByItemId) {
       this.elevationStepHeight = elevationStepHeight;
       this.tileRotationDegrees = tileRotationDegrees;
       this.depth = depth;
-      this.tileSymbolDescription = tileSymbolDescription;
+      this.topColor = topColor;
+      this.sideColor = sideColor;
       this.maybeOverlaySymbolDescription = maybeOverlaySymbolDescription;
       this.maybeFeatureSymbolDescription = maybeFeatureSymbolDescription;
       this.itemSymbolDescriptionByItemId = itemSymbolDescriptionByItemId;
     }
 
-    public TileDescription WithTileSymbolDescription(ExtrudedSymbolDescription newTileSymbolDescription) {
-      return new TileDescription(
-        elevationStepHeight,
-        tileRotationDegrees,
-        depth,
-        newTileSymbolDescription,
-        maybeOverlaySymbolDescription,
-        maybeFeatureSymbolDescription,
-        itemSymbolDescriptionByItemId);
-    }
+    // public TileDescription WithTileSymbolDescription(ExtrudedSymbolDescription newTileSymbolDescription) {
+    //   return new TileDescription(
+    //     elevationStepHeight,
+    //     tileRotationDegrees,
+    //     depth,
+    //     newTopColor,
+    //     newTopColor,
+    //     maybeOverlaySymbolDescription,
+    //     maybeFeatureSymbolDescription,
+    //     itemSymbolDescriptionByItemId);
+    // }
 
     public override bool Equals(object obj) {
       if (!(obj is TileDescription))
@@ -50,7 +55,9 @@ namespace Domino {
         return false;
       if (depth != that.depth)
         return false;
-      if (!tileSymbolDescription.Equals(that.tileSymbolDescription))
+      if (!topColor.Equals(that.topColor))
+        return false;
+      if (!sideColor.Equals(that.sideColor))
         return false;
       if ((maybeOverlaySymbolDescription != null) != (that.maybeOverlaySymbolDescription != null))
         return false;
@@ -75,7 +82,8 @@ namespace Domino {
       hashCode += 27 * elevationStepHeight.GetHashCode();
       hashCode += 31 * tileRotationDegrees.GetHashCode();
       hashCode += 37 * depth.GetHashCode();
-      hashCode += 41 * tileSymbolDescription.GetHashCode();
+      hashCode += 41 * topColor.GetHashCode();
+      hashCode += 43 * sideColor.GetHashCode();
       if (maybeOverlaySymbolDescription != null)
         hashCode += 47 * maybeOverlaySymbolDescription.GetHashCode();
       if (maybeFeatureSymbolDescription != null)
@@ -103,8 +111,6 @@ namespace Domino {
 
     private List<(ulong, SymbolView)> itemSymbolViewByItemId = new List<(ulong, SymbolView)>();
 
-    Instantiator instantiator;
-
     private float elevationStepHeight;
     private IVector4Animation topColor;
     private IVector4Animation sideColor;
@@ -112,38 +118,63 @@ namespace Domino {
     private ExtrudedSymbolDescription maybeOverlay;
     private SymbolId tileSymbolId;
     private float tileRotationDegrees;
-    private float tileScale;
-    private OutlineMode tileOutlineMode;
-    private IVector4Animation tileOutlineColor;
+    // private float tileScale;
+    // private OutlineMode tileOutlineMode;
+    // private IVector4Animation tileOutlineColor;
 
     // We have timers active to destroy these when theyre done, but we might
     // also destroy them if we need to Destruct fast.
     private List<KeyValuePair<SymbolView, int>> transientPrismSymbolsAndTimerIds;
 
-    public void Init(
-      IClock clock,
-      ITimer timer,
-        Instantiator instantiator,
-        Vector3 basePosition,
+    public List<GameObject> groundGameObjects;
+    public List<GameObject> outlineGameObjects;
+
+    private Mesh groundMesh;
+    private Mesh outlinesMesh;
+    private ILoader loader;
+    
+    public static TileView Create(
+        ILoader loader,
+        Mesh groundMesh,
+        Mesh outlinesMesh,
+        IClock clock,
+        ITimer timer,
         TileDescription initialDescription) {
+      var gameObject = loader.NewEmptyGameObject();
+      var tileView = gameObject.AddComponent<TileView>();
+      
+      tileView.Init(loader, clock, timer, initialDescription, groundMesh, outlinesMesh);
+      return tileView;
+      // return (facesObject, outlinesObject);
+    }
+
+    public void Init(
+        ILoader loader,
+        IClock clock,
+        ITimer timer,
+        TileDescription initialDescription,
+        Mesh groundObject,
+        Mesh outlinesObject) {
+      this.loader = loader;
+      this.groundGameObjects = new List<GameObject>();
+      this.outlineGameObjects = new List<GameObject>();
+      this.groundMesh = groundObject;
+      this.outlinesMesh = outlinesObject;
       this.clock = clock;
       this.timer = timer;
-      this.instantiator = instantiator;
 
       transientPrismSymbolsAndTimerIds = new List<KeyValuePair<SymbolView, int>>();
 
-      gameObject.transform.localPosition = basePosition;
-
       initialized = true;
 
-      tileSymbolId = initialDescription.tileSymbolDescription.symbol.symbolId;
-      tileRotationDegrees = initialDescription.tileSymbolDescription.symbol.rotationDegrees;
+      // tileSymbolId = initialDescription.tileSymbolDescription.symbol.symbolId;
+      tileRotationDegrees = initialDescription.tileRotationDegrees;//tileSymbolDescription.symbol.rotationDegrees;
       elevationStepHeight = initialDescription.elevationStepHeight;
-      tileScale = initialDescription.tileSymbolDescription.symbol.scale;
-      tileOutlineMode = initialDescription.tileSymbolDescription.symbol.isOutlined;
-      tileOutlineColor = initialDescription.tileSymbolDescription.symbol.outlineColor;
-      SetFrontColor(initialDescription.tileSymbolDescription.symbol.frontColor);
-      SetSidesColor(initialDescription.tileSymbolDescription.sidesColor);
+      // tileScale = initialDescription.tileSymbolDescription.symbol.scale;
+      // tileOutlineMode = initialDescription.tileSymbolDescription.symbol.isOutlined;
+      // tileOutlineColor = initialDescription.tileSymbolDescription.symbol.outlineColor;
+      SetFrontColor(initialDescription.topColor);
+      SetSidesColor(initialDescription.sideColor);
       // This is when the tile views are actually made
       SetDepth(initialDescription.depth);
       SetOverlay(initialDescription.maybeOverlaySymbolDescription);
@@ -183,9 +214,10 @@ namespace Domino {
           Asserts.Assert(false, "Item ID " + id + " already exists!");
         }
       }
-      var itemSymbolView = instantiator.CreateSymbolView(clock, true, symbolDescription);
-      itemSymbolViewByItemId.Add((id, itemSymbolView));
-      UpdateItemPositions();
+      Asserts.Assert(false);
+      // var itemSymbolView = instantiator.CreateSymbolView(clock, true, symbolDescription);
+      // itemSymbolViewByItemId.Add((id, itemSymbolView));
+      // UpdateItemPositions();
     }
 
     public void ClearItems() {
@@ -273,81 +305,6 @@ namespace Domino {
       }
     }
     
-    // public void SetItems(List<(ulong, ExtrudedSymbolDescription)> items) {
-    //   foreach (var x in itemSymbolViewByItemId) {
-    //     x.Item2.Destruct();
-    //   }
-    //   itemSymbolViewByItemId.Clear();
-    //   for (int itemIndex = 0; itemIndex < items.Count; itemIndex++) {
-    //     var itemId = items[itemIndex].Item1;
-    //     var description = items[itemIndex].Item2;
-    //     var itemSymbolView = instantiator.CreateSymbolView(clock, true, description);
-    //
-    //     float inscribeCircleRadius = 0.75f; // chosen cuz it looks about right
-    //                                         // https://math.stackexchange.com/questions/666491/three-circles-within-a-larger-circle
-    //     float itemRadius = (-3 + 2 * 1.732f) * inscribeCircleRadius;
-    //
-    //     float itemCenterXFromTileCenter = 0;
-    //     float itemCenterYFromTileCenter = 0;
-    //
-    //     if (items.Count == 1) {
-    //       itemCenterXFromTileCenter = 0;
-    //       itemCenterYFromTileCenter = 0;
-    //     } else if (items.Count == 2) {
-    //       if (itemIndex == 0) {
-    //         itemCenterXFromTileCenter = -itemRadius / 2;
-    //         itemCenterYFromTileCenter = 0;
-    //       } else {
-    //         itemCenterXFromTileCenter = itemRadius / 2;
-    //         itemCenterYFromTileCenter = 0;
-    //       }
-    //     } else {
-    //       // 0.866 is cos(30)
-    //       // I don't know why we need that / 2 there.
-    //       float itemCenterDistanceToTileCenter = itemRadius / 0.866f / 2;
-    //
-    //       if (itemIndex == 0) {
-    //         itemCenterXFromTileCenter = 0;
-    //         itemCenterYFromTileCenter = itemCenterDistanceToTileCenter;
-    //       } else if (itemIndex == 1) {
-    //         // 0.866 is cos(30)
-    //         itemCenterXFromTileCenter = 0.866f * itemCenterDistanceToTileCenter;
-    //         // 0.5f is sin(30)
-    //         itemCenterYFromTileCenter = -0.5f * itemCenterDistanceToTileCenter;
-    //       } else if (itemIndex == 2) {
-    //         // 0.866 is cos(30)
-    //         itemCenterXFromTileCenter = -0.866f * itemCenterDistanceToTileCenter;
-    //         // 0.5f is sin(30)
-    //         itemCenterYFromTileCenter = -0.5f * itemCenterDistanceToTileCenter;
-    //       }
-    //
-    //       // TODO: adjust upward if the unit is on the tile
-    //       itemCenterYFromTileCenter += 0;
-    //     }
-    //
-    //     itemSymbolView.gameObject.transform.localPosition =
-    //         new Vector3(
-    //             itemCenterXFromTileCenter,
-    //             .05f,
-    //             itemCenterYFromTileCenter);
-    //     itemSymbolView.gameObject.transform.localRotation =
-    //         Quaternion.Euler(new Vector3(-90, 0f, 0));
-    //     itemSymbolView.gameObject.transform.localScale =
-    //       new Vector3(
-    //           -1 * itemRadius,
-    //           -1 * itemRadius,
-    //           .1f);
-    //
-    //     itemSymbolView.gameObject.transform.SetParent(transform, false);
-    //
-    //     itemSymbolViewByItemId.Add(itemId, itemSymbolView);
-    //
-    //     if (itemIndex == 4) {
-    //       break;
-    //     }
-    //   }
-    // }
-
     public void SetFrontColor(IVector4Animation frontColor) {
       this.topColor = frontColor;
       foreach (var tsv in tileSymbolViews) {
@@ -368,11 +325,12 @@ namespace Domino {
       }
       this.maybeFeature = maybeFeature;
       if (this.maybeFeature != null) {
-        featureSymbolView = instantiator.CreateSymbolView(clock, true, this.maybeFeature);
-        featureSymbolView.gameObject.transform.localPosition = new Vector3(0, .28f, .15f);
-        featureSymbolView.gameObject.transform.localRotation = Quaternion.Euler(new Vector3(180 + 50, 0f, 0f));
-        featureSymbolView.gameObject.transform.localScale = new Vector3(-.8f, -.8f, .1f);
-        featureSymbolView.gameObject.transform.SetParent(transform, false);
+        Asserts.Assert(false);
+        // featureSymbolView = instantiator.CreateSymbolView(clock, true, this.maybeFeature);
+        // featureSymbolView.gameObject.transform.localPosition = new Vector3(0, .28f, .15f);
+        // featureSymbolView.gameObject.transform.localRotation = Quaternion.Euler(new Vector3(180 + 50, 0f, 0f));
+        // featureSymbolView.gameObject.transform.localScale = new Vector3(-.8f, -.8f, .1f);
+        // featureSymbolView.gameObject.transform.SetParent(transform, false);
       }
     }
 
@@ -382,54 +340,61 @@ namespace Domino {
       }
       this.maybeOverlay = maybeOverlay;
       if (this.maybeOverlay != null) {
-        overlaySymbolView = instantiator.CreateSymbolView(clock, true, maybeOverlay);
-        overlaySymbolView.gameObject.transform.localPosition = new Vector3(0, .01f, 0);
-        overlaySymbolView.gameObject.transform.localRotation = Quaternion.Euler(new Vector3(-90, 0, 0));
-        overlaySymbolView.gameObject.transform.localScale = new Vector3(-1 * 0.707f, -1 * 0.707f, 1);
-        overlaySymbolView.gameObject.transform.SetParent(transform, false);
+        Asserts.Assert(false);
+        // overlaySymbolView = instantiator.CreateSymbolView(clock, true, maybeOverlay);
+        // overlaySymbolView.gameObject.transform.localPosition = new Vector3(0, .01f, 0);
+        // overlaySymbolView.gameObject.transform.localRotation = Quaternion.Euler(new Vector3(-90, 0, 0));
+        // overlaySymbolView.gameObject.transform.localScale = new Vector3(-1 * 0.707f, -1 * 0.707f, 1);
+        // overlaySymbolView.gameObject.transform.SetParent(transform, false);
       }
     }
 
     public void SetDepth(int depth) {
-      while (tileSymbolViews.Count > depth) {
-        var tsv = tileSymbolViews[tileSymbolViews.Count - 1];
-        tileSymbolViews.RemoveAt(tileSymbolViews.Count - 1);
-        tsv.Destruct();
+      while (groundGameObjects.Count > depth) {
+        var groundGameObject = groundGameObjects[groundGameObjects.Count - 1];
+        groundGameObjects.RemoveAt(groundGameObjects.Count - 1);
+        Destroy(groundGameObject);
+        var outlinesGameObject = outlineGameObjects[outlineGameObjects.Count - 1];
+        outlineGameObjects.RemoveAt(outlineGameObjects.Count - 1);
+        Destroy(outlinesGameObject);
       }
-      var description =
-          new ExtrudedSymbolDescription(
-              RenderPriority.TILE,
-              new SymbolDescription(
-                  tileSymbolId,
-                  topColor,
-                  tileRotationDegrees,
-                  tileScale,
-                  tileOutlineMode,
-                  tileOutlineColor),
-              true,
-              sideColor);
-      while (tileSymbolViews.Count < depth) {
-        var newIndex = tileSymbolViews.Count;
-        SymbolView tileSymbolView = instantiator.CreateSymbolView(clock, true, description);
-        SetTileOrPrismTransform(tileSymbolView, elevationStepHeight, tileRotationDegrees, -newIndex, 1);
-        tileSymbolView.gameObject.transform.SetParent(transform, false);
-        tileSymbolViews.Add(tileSymbolView);
+      while (groundGameObjects.Count < depth) {
+        var newIndex = groundGameObjects.Count;
+        
+        var facesObject = loader.NewQuad();
+        facesObject.GetComponent<MeshRenderer>().sharedMaterial = loader.white;
+        facesObject.GetComponent<MeshFilter>().sharedMesh = groundMesh;
+
+        var outlinesObject = loader.NewQuad();
+        outlinesObject.GetComponent<MeshRenderer>().sharedMaterial = loader.black;
+        outlinesObject.GetComponent<MeshFilter>().sharedMesh = outlinesMesh;
+
+        var translate = new Vector3(0, -newIndex * elevationStepHeight, 0);
+        
+        facesObject.transform.SetParent(gameObject.transform, false);
+        facesObject.transform.localPosition = translate;
+        outlinesObject.transform.SetParent(gameObject.transform, false);
+        outlinesObject.transform.localPosition = translate;
+        
+        groundGameObjects.Add(facesObject);
+        outlineGameObjects.Add(outlinesObject);
       }
     }
 
 
     public void ShowRune(ExtrudedSymbolDescription runeSymbolDescription) {
-      var symbolView = instantiator.CreateSymbolView(clock, true, runeSymbolDescription);
-      symbolView.transform.localRotation = Quaternion.Euler(new Vector3(-50, 180, 0));
-      symbolView.transform.localScale = new Vector3(1, 1, .1f);
-      symbolView.transform.localPosition = new Vector3(0, 0.5f, -.2f);
-      symbolView.transform.SetParent(gameObject.transform, false);
-      symbolView.FadeInThenOut(100, 400);
-      timer.ScheduleTimer(1000, () => {
-        if (alive) {
-          symbolView.Destruct();
-        }
-      });
+      Asserts.Assert(false);
+      // var symbolView = instantiator.CreateSymbolView(clock, true, runeSymbolDescription);
+      // symbolView.transform.localRotation = Quaternion.Euler(new Vector3(-50, 180, 0));
+      // symbolView.transform.localScale = new Vector3(1, 1, .1f);
+      // symbolView.transform.localPosition = new Vector3(0, 0.5f, -.2f);
+      // symbolView.transform.SetParent(gameObject.transform, false);
+      // symbolView.FadeInThenOut(100, 400);
+      // timer.ScheduleTimer(1000, () => {
+      //   if (alive) {
+      //     symbolView.Destruct();
+      //   }
+      // });
     }
 
     public void FadeInThenOut(long inDurationMs, long outDurationMs) {
@@ -449,51 +414,52 @@ namespace Domino {
       ExtrudedSymbolDescription prismDescription,
       ExtrudedSymbolDescription prismOverlayDescription) {
 
-      var prismGameObject = instantiator.CreateEmptyGameObject();
-      prismGameObject.transform.SetParent(gameObject.transform, false);
-      // We want to rotate the overall prism object because we want the
-      // overlay symbol to be aligned with the camera but want the polygon
-      // symbol to be aligned with the terrain tile.
-      // However, we do animate the scale of this object.
-      var scaleAnimator = ScaleAnimator.MakeOrGetFrom(clock, prismGameObject);
-      var yScaleAnimation =
-        new AddFloatAnimation(
-          new ConstantFloatAnimation(.95f),
-          new MultiplyFloatAnimation(
-            new ConstantFloatAnimation(.05f),
-            FloatAnimations.InThenOut(clock.GetTimeMs(), 100, 400, 1, 1, 0)));
-      var scaleAnimation = new Vector3Animation(new ConstantFloatAnimation(.9f), yScaleAnimation, new ConstantFloatAnimation(.9f));
-      scaleAnimator.Set(scaleAnimation);
-
-      var polygonView =
-        instantiator.CreateSymbolView(
-          clock,
-          false,
-          prismDescription);
-      SetTileOrPrismTransform(polygonView, elevationStepHeight, tileRotationDegrees, 0, 3);
-      polygonView.transform.SetParent(prismGameObject.transform, false);
-      polygonView.FadeInThenOut(100, 400);
-      ScheduleSymbolViewDestruction(polygonView);
-
-      var overlayView =
-        instantiator.CreateSymbolView(
-          clock,
-          false,
-          prismOverlayDescription);
-
-      float overlayThickness = .35f * elevationStepHeight;
-      // No idea why we need the -90. It has to do with
-      // unity's infuriating mishandling of .obj file imports.
-      overlayView.gameObject.transform.localRotation =
-          Quaternion.Euler(new Vector3(-90, 0, 0));
-      overlayView.gameObject.transform.localScale =
-          new Vector3(1 * .8f, -1 * .8f, overlayThickness);
-      overlayView.gameObject.transform.localPosition =
-          new Vector3(0, elevationStepHeight * 3f + overlayThickness);
-
-      overlayView.transform.SetParent(prismGameObject.transform, false);
-      overlayView.FadeInThenOut(100, 400);
-      ScheduleSymbolViewDestruction(overlayView);
+      Asserts.Assert(false);
+      // var prismGameObject = instantiator.CreateEmptyGameObject();
+      // prismGameObject.transform.SetParent(gameObject.transform, false);
+      // // We want to rotate the overall prism object because we want the
+      // // overlay symbol to be aligned with the camera but want the polygon
+      // // symbol to be aligned with the terrain tile.
+      // // However, we do animate the scale of this object.
+      // var scaleAnimator = ScaleAnimator.MakeOrGetFrom(clock, prismGameObject);
+      // var yScaleAnimation =
+      //   new AddFloatAnimation(
+      //     new ConstantFloatAnimation(.95f),
+      //     new MultiplyFloatAnimation(
+      //       new ConstantFloatAnimation(.05f),
+      //       FloatAnimations.InThenOut(clock.GetTimeMs(), 100, 400, 1, 1, 0)));
+      // var scaleAnimation = new Vector3Animation(new ConstantFloatAnimation(.9f), yScaleAnimation, new ConstantFloatAnimation(.9f));
+      // scaleAnimator.Set(scaleAnimation);
+      //
+      // var polygonView =
+      //   instantiator.CreateSymbolView(
+      //     clock,
+      //     false,
+      //     prismDescription);
+      // SetTileOrPrismTransform(polygonView, elevationStepHeight, tileRotationDegrees, 0, 3);
+      // polygonView.transform.SetParent(prismGameObject.transform, false);
+      // polygonView.FadeInThenOut(100, 400);
+      // ScheduleSymbolViewDestruction(polygonView);
+      //
+      // var overlayView =
+      //   instantiator.CreateSymbolView(
+      //     clock,
+      //     false,
+      //     prismOverlayDescription);
+      //
+      // float overlayThickness = .35f * elevationStepHeight;
+      // // No idea why we need the -90. It has to do with
+      // // unity's infuriating mishandling of .obj file imports.
+      // overlayView.gameObject.transform.localRotation =
+      //     Quaternion.Euler(new Vector3(-90, 0, 0));
+      // overlayView.gameObject.transform.localScale =
+      //     new Vector3(1 * .8f, -1 * .8f, overlayThickness);
+      // overlayView.gameObject.transform.localPosition =
+      //     new Vector3(0, elevationStepHeight * 3f + overlayThickness);
+      //
+      // overlayView.transform.SetParent(prismGameObject.transform, false);
+      // overlayView.FadeInThenOut(100, 400);
+      // ScheduleSymbolViewDestruction(overlayView);
 
       return clock.GetTimeMs() + 500;
     }
@@ -513,10 +479,10 @@ namespace Domino {
       transientPrismSymbolsAndTimerIds.Add(new KeyValuePair<SymbolView, int>(symbolView, prismOverlayTimerId));
     }
 
-    public void Start() {
-      if (!initialized) {
-        throw new Exception("TileView component not initialized!");
-      }
-    }
+    // public void Start() {
+    //   if (!initialized) {
+    //     throw new Exception("TileView component not initialized!");
+    //   }
+    // }
   }
 }

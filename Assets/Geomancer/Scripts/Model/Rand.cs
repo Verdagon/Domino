@@ -7,6 +7,9 @@ namespace Geomancer.Model {
 
 public class Rand {
   private int rand;
+  public Rand(int seed) {
+    this.rand = seed;
+  }
   public int Next() {
     int result = new Random(rand).Next();
     rand = result;

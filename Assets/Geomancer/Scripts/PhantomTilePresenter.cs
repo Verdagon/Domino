@@ -71,9 +71,9 @@ namespace Geomancer {
         tileView = null;
       }
 
-      tileView = instantiator.CreateTileView(clock, timer, tileCenter, tileDescription);
-      tileView.gameObject.AddComponent<PhantomTilePresenterTile>().Init(this);
-      // tileView.SetDescription(tileDescription);
+      Asserts.Assert(false);
+      // tileView = instantiator.CreateTileView(clock, timer, tileCenter, tileDescription);
+      // tileView.gameObject.AddComponent<PhantomTilePresenterTile>().Init(this);
     }
 
     private static SymbolId GetTerrainTileShapeSymbol(Pattern pattern, PatternTile patternTile) {
@@ -106,25 +106,27 @@ namespace Geomancer {
       var sideColor = highlighted ? Vector4Animation.Color(.1f, .1f, .1f) : Vector4Animation.Color(0f, 0, 0f);
 
       var symbolName = GetTerrainTileShapeSymbol(pattern, patternTile);
-      return
-        new TileDescription(
-              .2f,
-              patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-              1,
-              new ExtrudedSymbolDescription(
-                RenderPriority.TILE,
-                new SymbolDescription(
-                    symbolName,
-                    frontColor,
-                    patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-                    1,
-                    OutlineMode.WithOutline,
-                    Vector4Animation.Color(.2f, .2f, .2f)),
-                false,
-                sideColor),
-              null,
-              null,
-              new List<(ulong, ExtrudedSymbolDescription)>());
+      Asserts.Assert(false);
+      return null;
+      // return
+      //   new TileDescription(
+      //         .2f,
+      //         patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
+      //         1,
+      //         new ExtrudedSymbolDescription(
+      //           RenderPriority.TILE,
+      //           new SymbolDescription(
+      //               symbolName,
+      //               frontColor,
+      //               patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
+      //               1,
+      //               OutlineMode.WithOutline,
+      //               Vector4Animation.Color(.2f, .2f, .2f)),
+      //           false,
+      //           sideColor),
+      //         null,
+      //         null,
+      //         new List<(ulong, ExtrudedSymbolDescription)>());
     }
 
     public void DestroyPhantomTilePresenter() {

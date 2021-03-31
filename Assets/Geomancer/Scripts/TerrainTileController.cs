@@ -75,29 +75,30 @@ namespace Geomancer {
       var pattern = terrain.pattern;
       var symbolId = GetTerrainTileShapeSymbol(patternTile);
 
-      var initialTileDescription =
-          new TileDescription(
-              terrain.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier, // elevation
-              patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-              terrainTile.elevation, // depth
-              new ExtrudedSymbolDescription(
-                  RenderPriority.TILE,
-                  new SymbolDescription(
-                      symbolId, // symbol id
-                      CalculateTintedFrontColor(membersFrontColors[membersFrontColors.Count - 1].Item2, selected, highlighted),
-                      patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-                      1, // scale
-                      OutlineMode.WithOutline,
-                      Vector4Animation.Color(0, 0, 0)), // outline
-                  true,
-                  membersSideColors[membersSideColors.Count - 1].Item2),
-              CalculateMaybeOverlay(membersOverlays),
-              CalculateMaybeFeature(membersFeatures),
-              membersItems);
-
-      var position = CalculatePosition(terrain.elevationStepHeight, terrain.pattern, location, terrainTile.elevation);
-      tileView = instantiator.CreateTileView(clock, timer, position, initialTileDescription);
-      tileView.gameObject.AddComponent<TerrainTilePresenterTile>().Init(this);
+      Asserts.Assert(false);
+      // var initialTileDescription =
+      //     new TileDescription(
+      //         terrain.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier, // elevation
+      //         patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
+      //         terrainTile.elevation, // depth
+      //         new ExtrudedSymbolDescription(
+      //             RenderPriority.TILE,
+      //             new SymbolDescription(
+      //                 symbolId, // symbol id
+      //                 CalculateTintedFrontColor(membersFrontColors[membersFrontColors.Count - 1].Item2, selected, highlighted),
+      //                 patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
+      //                 1, // scale
+      //                 OutlineMode.WithOutline,
+      //                 Vector4Animation.Color(0, 0, 0)), // outline
+      //             true,
+      //             membersSideColors[membersSideColors.Count - 1].Item2),
+      //         CalculateMaybeOverlay(membersOverlays),
+      //         CalculateMaybeFeature(membersFeatures),
+      //         membersItems);
+      //
+      // var position = CalculatePosition(terrain.elevationStepHeight, terrain.pattern, location, terrainTile.elevation);
+      // tileView = instantiator.CreateTileView(clock, timer, position, initialTileDescription);
+      // tileView.gameObject.AddComponent<TerrainTilePresenterTile>().Init(this);
     }
 
     private SymbolId GetTerrainTileShapeSymbol(PatternTile patternTile) {

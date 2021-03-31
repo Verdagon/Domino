@@ -145,20 +145,21 @@ namespace Geomancer {
         }
       }
 
-      var outlineMode = specifiedOutlineColor ? Domino.OutlineMode.WithOutline : defaultTile.tileSymbolDescription.symbol.isOutlined;
-
-      var tileSymbolDescription =
-          new Domino.ExtrudedSymbolDescription(
-              defaultTile.tileSymbolDescription.renderPriority,
-              new Domino.SymbolDescription(
-                  defaultTile.tileSymbolDescription.symbol.symbolId,
-                  specifiedTopColor ? topColor : defaultTile.tileSymbolDescription.symbol.frontColor,
-                  defaultTile.tileRotationDegrees,
-                  1,
-                  outlineMode,
-                  specifiedOutlineColor ? outlineColor : defaultTile.tileSymbolDescription.symbol.outlineColor),
-              defaultTile.tileSymbolDescription.extruded,
-              specifiedSideColor ? sideColor : defaultTile.tileSymbolDescription.sidesColor);
+      // var outlineMode = specifiedOutlineColor ? Domino.OutlineMode.WithOutline : defaultTile.tileSymbolDescription.symbol.isOutlined;
+      // var tileSymbolDescription =
+      //     new Domino.ExtrudedSymbolDescription(
+      //         defaultTile.tileSymbolDescription.renderPriority,
+      //         new Domino.SymbolDescription(
+      //             defaultTile.tileSymbolDescription.symbol.symbolId,
+      //             ,
+      //             defaultTile.tileRotationDegrees,
+      //             1,
+      //             outlineMode,
+      //             specifiedOutlineColor ? outlineColor : defaultTile.tileSymbolDescription.symbol.outlineColor),
+      //         defaultTile.tileSymbolDescription.extruded,
+      //         );
+      var theTopColor = specifiedTopColor ? topColor : defaultTile.topColor;
+      var theSideColor = specifiedSideColor ? sideColor : defaultTile.sideColor;
 
       var itemSymbolDescriptionByItemId = new List<(ulong, Domino.ExtrudedSymbolDescription)>();
       for (int i = 0; i < items.Count; i++) {
@@ -170,7 +171,8 @@ namespace Geomancer {
               defaultTile.elevationStepHeight,
               defaultTile.tileRotationDegrees,
               defaultTile.depth,
-              tileSymbolDescription,
+              theTopColor,
+              theSideColor,
               maybeOverlay,
               maybeFeature,
               itemSymbolDescriptionByItemId);

@@ -142,21 +142,21 @@ namespace Domino {
       return unitView;
     }
 
-    public TileView CreateTileView(
-      IClock clock,
-      ITimer timer,
-        Vector3 basePosition,
-        TileDescription description) {
-      var tileGameObject = Instantiate(tilePrefab);
-      var tileView = tileGameObject.GetComponent<TileView>();
-      tileView.Init(
-        clock,
-        timer,
-          this,
-          basePosition,
-          description);
-      return tileView;
-    }
+    // public TileView CreateTileView(
+    //   IClock clock,
+    //   ITimer timer,
+    //     Vector3 basePosition,
+    //     TileDescription description) {
+    //   var tileGameObject = Instantiate(tilePrefab);
+    //   var tileView = tileGameObject.GetComponent<TileView>();
+    //   tileView.Init(
+    //     clock,
+    //     timer,
+    //       this,
+    //       basePosition,
+    //       description);
+    //   return tileView;
+    // }
 
     public MeterView CreateMeterView(IClock clock, float ratio, IVector4Animation filledColor, IVector4Animation emptyColor) {
       var meterGameObject = Instantiate(meterPrefab);
