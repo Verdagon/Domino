@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Virtence.VText;
 
 namespace Domino {
   
@@ -325,7 +326,28 @@ namespace Domino {
       }
       this.maybeFeature = maybeFeature;
       if (this.maybeFeature != null) {
-        Asserts.Assert(false);
+        GameObject glyph = Instantiate(Resources.Load("VText")) as GameObject;
+        VText vtext = glyph.GetComponent<VText>();
+        vtext.MeshParameter.FontName = "AthSymbolsSimplified.ttf";
+        vtext.SetText("b");
+        vtext.RenderParameter.Materials = new[] {loader.white, loader.white, loader.white};
+        vtext.Rebuild();
+        glyph.transform.SetParent(gameObject.transform, false);
+        glyph.transform.localPosition = new Vector3(0, 0.30f, -0.001f);
+        glyph.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
+        glyph.transform.localScale = new Vector3(0.7f, 0.7f, 1);
+        
+        GameObject glyph2 = Instantiate(Resources.Load("VText")) as GameObject;
+        VText vtext2 = glyph2.GetComponent<VText>();
+        vtext2.MeshParameter.FontName = "AthSymbolsExpanded.ttf";
+        vtext2.SetText("b");
+        vtext2.RenderParameter.Materials = new[] {loader.black, loader.black, loader.black};
+        vtext2.Rebuild();
+        glyph2.transform.SetParent(gameObject.transform, false);
+        glyph2.transform.localPosition = new Vector3(0, 0.30f, 0);
+        glyph2.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
+        glyph2.transform.localScale = new Vector3(0.7f, 0.7f, 1);
+
         // featureSymbolView = instantiator.CreateSymbolView(clock, true, this.maybeFeature);
         // featureSymbolView.gameObject.transform.localPosition = new Vector3(0, .28f, .15f);
         // featureSymbolView.gameObject.transform.localRotation = Quaternion.Euler(new Vector3(180 + 50, 0f, 0f));
@@ -368,13 +390,16 @@ namespace Domino {
         var outlinesObject = loader.NewQuad();
         outlinesObject.GetComponent<MeshRenderer>().sharedMaterial = loader.black;
         outlinesObject.GetComponent<MeshFilter>().sharedMesh = outlinesMesh;
-
+        
+        var rotation = Quaternion.AngleAxis(-tileRotationDegrees, Vector3.up);
         var translate = new Vector3(0, -newIndex * elevationStepHeight, 0);
         
         facesObject.transform.SetParent(gameObject.transform, false);
         facesObject.transform.localPosition = translate;
+        facesObject.transform.localRotation = rotation;
         outlinesObject.transform.SetParent(gameObject.transform, false);
         outlinesObject.transform.localPosition = translate;
+        outlinesObject.transform.localRotation = rotation;
         
         groundGameObjects.Add(facesObject);
         outlineGameObjects.Add(outlinesObject);

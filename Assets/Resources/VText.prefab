@@ -157,7 +157,7 @@ MonoBehaviour:
     - {fileID: 0}
     _shadowCastMode: 1
     _receiveShadows: 1
-    _lightProbeUsage: 0
+    _lightProbeUsage: 1
     _applyLayerSettings: 1
     _modified: 0
   PhysicsParameter:
