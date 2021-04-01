@@ -6,6 +6,7 @@ using Domino;
 using UnityEngine;
 using Virtence.VText;
 using static Domino.Instantiator;
+using Random = System.Random;
 
 namespace Domino {
   public enum OutlineMode {
@@ -95,8 +96,10 @@ namespace Domino {
     // Object with a transform for the mesh, for example for rotating it.
     // Lives inside this.gameObject.
     // Specified by unity.
-    public GameObject frontObject;
-    public GameObject outlineObject;
+    // public GameObject faceObject;
+    // public GameObject sidesObject;
+    private VText faceObject;
+    private VText outlineObject;
 
     private ILoader loader;
 
@@ -107,14 +110,24 @@ namespace Domino {
     float scale;
     private ExtrudedSymbolDescription symbolDescription;
 
-    private static void MaybeSetMesh(GameObject gameObject, Mesh mesh) {
-      // Check if its been destroyed
-      if (gameObject != null) {
-        gameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
-      }
-    }
+    // private static void MaybeSetMesh(GameObject gameObject, Mesh mesh) {
+    //   // Check if its been destroyed
+    //   if (gameObject != null) {
+    //     gameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
+    //   }
+    // }
 
-    public void Init(
+    public static SymbolView Create(
+        IClock clock,
+        ILoader loader,
+        ExtrudedSymbolDescription symbolDescription) {
+      var symbolViewObject = loader.NewEmptyGameObject();
+      var symbolView = symbolViewObject.AddComponent<SymbolView>();
+      symbolView.Init(clock, loader, symbolDescription);
+      return symbolView;
+    }
+    
+    private void Init(
         IClock clock,
         ILoader loader,
         // // If true, z=0 will be the front of the symbol.
@@ -126,20 +139,18 @@ namespace Domino {
       this.symbolDescription = symbolDescription;
       
       var frontExtruded = symbolDescription.extruded && !(symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
-      frontObject = loader.NewQuad();
-      frontObject.GetComponent<MeshRenderer>().sharedMaterial = loader.white;
-      frontObject.transform.SetParent(gameObject.transform, false);
-      loader.getMeshMaybeAsync(new VTextParameters(symbolDescription.symbol.symbolId, false, frontExtruded))
-          .OnComplete += mesh => MaybeSetMesh(frontObject, mesh);
-
+      faceObject = loader.getSymbolMesh(new VTextParameters(symbolDescription.symbol.symbolId, false, frontExtruded));
+      faceObject.RenderParameter.Materials = new[] { loader.black, loader.black, loader.black };
+      faceObject.transform.SetParent(gameObject.transform, false);
+      faceObject.transform.localScale = new Vector3(1, 1, frontExtruded ? 1 : 0);
+      
       if (symbolDescription.symbol.isOutlined != OutlineMode.NoOutline) {
         var outlineExtruded = symbolDescription.extruded && (symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
-        outlineObject = loader.NewQuad();
-        outlineObject.GetComponent<MeshRenderer>().sharedMaterial = loader.black;
+        outlineObject =
+            loader.getSymbolMesh(new VTextParameters(symbolDescription.symbol.symbolId, true, outlineExtruded));
         outlineObject.transform.SetParent(gameObject.transform, false);
         outlineObject.transform.localPosition = new Vector3(0, 0, 0.001f);
-        loader.getMeshMaybeAsync(new VTextParameters(symbolDescription.symbol.symbolId, true, outlineExtruded))
-            .OnComplete += mesh => MaybeSetMesh(outlineObject, mesh);
+        outlineObject.transform.localScale = new Vector3(1, 1, 1); //outlineExtruded ? 1 : 0);
       }
 
       // this.renderPriority = symbolDescription.renderPriority;
@@ -169,8 +180,15 @@ namespace Domino {
 
 
     public void SetFrontColor(IVector4Animation newColor) {
-      ColorAnimator.MakeOrGetFrom(clock, frontObject.gameObject).Set(newColor, symbolDescription.renderPriority);
-      
+      var animator = Vec4Animator.MakeOrGetFrom(
+          clock, faceObject.gameObject, (vec4) => {
+            foreach (var meshRenderer in faceObject.GetComponentsInChildren<MeshRenderer>()) {
+              var props = new MaterialPropertyBlock();
+              props.SetColor("_Color", new Color(vec4.x, vec4.y, vec4.z, vec4.w));
+              meshRenderer.SetPropertyBlock(props);
+            }
+          });
+      animator.Set(newColor, symbolDescription.renderPriority);
       frontColor = newColor;
     }
 
@@ -186,10 +204,9 @@ namespace Domino {
     }
 
     private void InnerSetScale(float newScale) {
-      frontObject.transform.localScale = new Vector3(newScale, newScale, newScale);
-      outlineObject.transform.localScale = new Vector3(newScale, newScale, newScale);
-      if (newScale > 9) {
-        Debug.Log("yeah over 9");
+      faceObject.transform.localScale = new Vector3(newScale, newScale, newScale);
+      if (outlineObject != null) {
+        outlineObject.transform.localScale = new Vector3(newScale, newScale, newScale);
       }
       scale = newScale;
     }

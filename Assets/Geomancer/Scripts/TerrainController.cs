@@ -18,7 +18,8 @@ namespace Geomancer {
     ITimer timer;
     MemberToViewMapper vivimap;
     public readonly Geomancer.Model.Terrain terrain;
-    Instantiator instantiator;
+    ILoader loader;
+    private TileShapeMeshCache tileShapeMeshCache;
     Dictionary<Location, TerrainTilePresenter> tilePresenters = new Dictionary<Location, TerrainTilePresenter>();
     Dictionary<Location, PhantomTilePresenter> phantomTilePresenters = new Dictionary<Location, PhantomTilePresenter>();
 
@@ -26,12 +27,14 @@ namespace Geomancer {
     private SortedSet<Location> highlightedLocations = new SortedSet<Location>();
 
     public TerrainPresenter(IClock clock,
-      ITimer timer, MemberToViewMapper vivimap, Geomancer.Model.Terrain terrain, Instantiator instantiator) {
+      ITimer timer, MemberToViewMapper vivimap, Geomancer.Model.Terrain terrain, ILoader loader,
+      TileShapeMeshCache tileShapeMeshCache) {
       this.clock = clock;
       this.timer = timer;
       this.vivimap = vivimap;
       this.terrain = terrain;
-      this.instantiator = instantiator;
+      this.loader = loader;
+      this.tileShapeMeshCache = tileShapeMeshCache;
 
       foreach (var locationAndTile in terrain.tiles) {
         addTerrainTile(locationAndTile.Key, locationAndTile.Value);
@@ -156,12 +159,12 @@ namespace Geomancer {
     }
 
     private void addTerrainTile(Location location, TerrainTile tile) {
-      var presenter = new TerrainTilePresenter(clock, timer, vivimap, terrain, location, tile, instantiator);
+      var presenter = new TerrainTilePresenter(clock, timer, vivimap, terrain, location, tile, loader, tileShapeMeshCache);
       tilePresenters.Add(location, presenter);
     }
 
     private void addPhantomTile(Location location) {
-      var presenter = new PhantomTilePresenter(clock, timer, terrain.pattern, location, instantiator);
+      var presenter = new PhantomTilePresenter(clock, timer, terrain.pattern, location, loader, tileShapeMeshCache, terrain.elevationStepHeight);
       phantomTilePresenters.Add(location, presenter);
     }
 

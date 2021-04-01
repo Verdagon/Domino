@@ -26,22 +26,30 @@ namespace Geomancer {
     ITimer timer;
   Pattern pattern;
     public readonly Location location;
-    Instantiator instantiator;
+    ILoader loader;
+    private TileShapeMeshCache tileShapeMeshCache;
 
+    private int elevationStepHeight;
+    
     Vector3 tileCenter;
     TileView tileView;
+    private bool highlighted;
 
     public PhantomTilePresenter(
         IClock clock,
       ITimer timer,
         Pattern pattern,
         Location location,
-        Instantiator instantiator) {
+        ILoader loader,
+        TileShapeMeshCache tileShapeMeshCache,
+        int elevationStepHeight) {
       this.clock = clock;
       this.timer = timer;
       this.pattern = pattern;
       this.location = location;
-      this.instantiator = instantiator;
+      this.loader = loader;
+      this.tileShapeMeshCache = tileShapeMeshCache;
+      this.elevationStepHeight = elevationStepHeight;
 
       var positionVec2 = pattern.GetTileCenter(location);
 
@@ -64,69 +72,88 @@ namespace Geomancer {
     }
 
     private void ResetViews() {
-      var tileDescription = GetTileDescription(pattern, location, false);
-
       if (tileView != null) {
         tileView.DestroyTile();
         tileView = null;
       }
 
-      Asserts.Assert(false);
-      // tileView = instantiator.CreateTileView(clock, timer, tileCenter, tileDescription);
-      // tileView.gameObject.AddComponent<PhantomTilePresenterTile>().Init(this);
-    }
+      var position = CalculatePosition(elevationStepHeight, pattern, location, 1);
 
-    private static SymbolId GetTerrainTileShapeSymbol(Pattern pattern, PatternTile patternTile) {
-      switch (pattern.name) {
-        case "square":
-          if (patternTile.shapeIndex == 0) {
-            return new SymbolId("AthSymbols", 0x006A);
-          }
-          break;
-        case "pentagon9":
-          if (patternTile.shapeIndex == 0) {
-            return new SymbolId("AthSymbols", 0x0069);
-          } else if (patternTile.shapeIndex == 1) {
-            return new SymbolId("AthSymbols", 0x0068);
-          }
-          break;
-        case "hex":
-          if (patternTile.shapeIndex == 0) {
-            return new SymbolId("AthSymbols", 0x0035);
-          }
-          break;
-      }
-      return new SymbolId("AthSymbols", 0x0065);
-    }
+      var patternTileIndex = location.indexInGroup;
+      var shapeIndex = pattern.patternTiles[patternTileIndex].shapeIndex;
+      //   var radianards = pattern.patternTiles[patternTileIndex].rotateRadianards;
+      //   var radians = radianards * 0.001f;
+      //   var degrees = (float)(radians * 180f / Math.PI);
+      //   var rotation = Quaternion.AngleAxis(-degrees, Vector3.up);
+      var unityElevationStepHeight = elevationStepHeight * ModelExtensions.ModelToUnityMultiplier;
+      var (groundMesh, outlinesMesh) = tileShapeMeshCache.Get(shapeIndex, unityElevationStepHeight, .025f);
 
-    private static TileDescription GetTileDescription(Pattern pattern, Location location, bool highlighted) {
+
+      var tileDescription = GetTileDescription(pattern, location, elevationStepHeight, highlighted);
+      tileView = TileView.Create(loader, groundMesh, outlinesMesh, clock, timer, tileDescription);
+      tileView.gameObject.AddComponent<PhantomTilePresenterTile>().Init(this);
+      
+      tileView.gameObject.transform.localPosition = position;
+    }
+    
+    private static Vector3 CalculatePosition(int elevationStepHeight, Pattern pattern, Location location, int elevation) {
+      var positionVec2 = pattern.GetTileCenter(location);
+      var positionVec3 = new Vec3(positionVec2.x, positionVec2.y, elevation * elevationStepHeight);
+      return positionVec3.ToUnity();
+    }
+    
+    //
+    // private static SymbolId GetTerrainTileShapeSymbol(Pattern pattern, PatternTile patternTile) {
+    //   switch (pattern.name) {
+    //     case "square":
+    //       if (patternTile.shapeIndex == 0) {
+    //         return new SymbolId("AthSymbols", 0x006A);
+    //       }
+    //       break;
+    //     case "pentagon9":
+    //       if (patternTile.shapeIndex == 0) {
+    //         return new SymbolId("AthSymbols", 0x0069);
+    //       } else if (patternTile.shapeIndex == 1) {
+    //         return new SymbolId("AthSymbols", 0x0068);
+    //       }
+    //       break;
+    //     case "hex":
+    //       if (patternTile.shapeIndex == 0) {
+    //         return new SymbolId("AthSymbols", 0x0035);
+    //       }
+    //       break;
+    //   }
+    //   return new SymbolId("AthSymbols", 0x0065);
+    // }
+    //
+    private static TileDescription GetTileDescription(
+        Pattern pattern, Location location, float elevationStepHeight, bool highlighted) {
       var patternTile = pattern.patternTiles[location.indexInGroup];
-
+    
       var frontColor = highlighted ? Vector4Animation.Color(.1f, .1f, .1f) : Vector4Animation.Color(0f, 0, 0f);
       var sideColor = highlighted ? Vector4Animation.Color(.1f, .1f, .1f) : Vector4Animation.Color(0f, 0, 0f);
-
-      var symbolName = GetTerrainTileShapeSymbol(pattern, patternTile);
-      Asserts.Assert(false);
-      return null;
-      // return
-      //   new TileDescription(
-      //         .2f,
-      //         patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-      //         1,
-      //         new ExtrudedSymbolDescription(
-      //           RenderPriority.TILE,
-      //           new SymbolDescription(
-      //               symbolName,
-      //               frontColor,
-      //               patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-      //               1,
-      //               OutlineMode.WithOutline,
-      //               Vector4Animation.Color(.2f, .2f, .2f)),
-      //           false,
-      //           sideColor),
-      //         null,
-      //         null,
-      //         new List<(ulong, ExtrudedSymbolDescription)>());
+    
+      return
+        new TileDescription(
+              elevationStepHeight,
+              patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
+              1,
+              frontColor,
+              sideColor,
+              // new ExtrudedSymbolDescription(
+              //   RenderPriority.TILE,
+              //   new SymbolDescription(
+              //       symbolName,
+              //       frontColor,
+              //       patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
+              //       1,
+              //       OutlineMode.WithOutline,
+              //       Vector4Animation.Color(.2f, .2f, .2f)),
+              //   false,
+              //   sideColor),
+              null,
+              null,
+              new List<(ulong, ExtrudedSymbolDescription)>());
     }
 
     public void DestroyPhantomTilePresenter() {

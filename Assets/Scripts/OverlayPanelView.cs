@@ -65,7 +65,7 @@ namespace Domino {
 
     public delegate void OnClicked();
 
-    Instantiator instantiator;
+    ILoader loader;
     IClock cinematicTimer;
 
     private long openTimeMs;
@@ -86,8 +86,34 @@ namespace Domino {
     private HashSet<int> fadingObjectIds;
     private Dictionary<int, int> parentIdByChildId;
 
+    public static OverlayPanelView Create(
+        ILoader loader,
+        GameObject parent,
+        IClock cinematicTimer,
+        float panelUnityXInParent,
+        float panelUnityYInParent,
+        int symbolsWide,
+        int symbolsHigh,
+        float symbolWidth,
+        float symbolHeight) {
+      var obj = loader.NewEmptyUIObject();
+      var spv = obj.AddComponent<OverlayPanelView>();
+      spv.Init(
+          loader,
+          cinematicTimer,
+          parent,
+          panelUnityXInParent,
+          panelUnityYInParent,
+          symbolsWide,
+          symbolsHigh,
+          symbolWidth,
+          symbolHeight);
+      //500, -500, -0, 500, 1000, -1000, -500);
+      return spv;
+    }
+
     public void Init(
-        Instantiator instantiator,
+        ILoader loader,
         IClock cinematicTimer,
         GameObject parent,
         float panelUnityXInParent,
@@ -96,7 +122,7 @@ namespace Domino {
         int symbolsHigh,
         float symbolWidth,
         float symbolHeight) {
-      this.instantiator = instantiator;
+      this.loader = loader;
       this.panelUnityXInParent = panelUnityXInParent;
       this.panelUnityYInParent = panelUnityYInParent;
       this.symbolWidth = symbolWidth;
@@ -161,7 +187,7 @@ namespace Domino {
         bool centered) {
       var unityX = x * symbolWidth + (centered ? symbolWidth / 2 : 0);
       var unityY = y * symbolHeight + (centered ? symbolHeight / 2 : 0);
-      var textGameObject = instantiator.CreateEmptyUiObject();
+      var textGameObject = loader.NewEmptyUIObject();
       textGameObject.transform.SetParent(gameObject.transform, false);
       textGameObject.transform.localScale = new Vector3(1, 1, 1);
       textGameObject.transform.localPosition = new Vector3(0, 0, 0);
@@ -175,7 +201,7 @@ namespace Domino {
       rectTransform.anchoredPosition = new Vector2(unityX, unityY);
       var textView = textGameObject.AddComponent<Text>();
       textView.raycastTarget = false;
-      textView.font = instantiator.GetFont(symbol.fontName + ".ttf");
+      textView.font = loader.LoadFont(symbol.fontName);
       textView.alignment = centered ? TextAnchor.MiddleCenter : TextAnchor.LowerLeft;
       // * 2 and then we scale by .5 so that unity renders it with more resolution.
       float widthToHeightRatio = symbolWidth / symbolHeight;
@@ -256,7 +282,7 @@ namespace Domino {
             borderHeight = borderSize;
           }
 
-          var borderRectGameObject = instantiator.CreateEmptyUiObject();
+          var borderRectGameObject = loader.NewEmptyUIObject();
           borderRectGameObject.transform.SetParent(gameObject.transform, false);
           var borderRectTransform = borderRectGameObject.GetComponent<RectTransform>();
           borderRectTransform.pivot = new Vector2(0, 0);
@@ -272,7 +298,7 @@ namespace Domino {
         }
       }
 
-      var rectGameObject = instantiator.CreateEmptyUiObject();
+      var rectGameObject = loader.NewEmptyUIObject();
       rectGameObject.transform.SetParent(gameObject.transform, false);
       var rectTransform = rectGameObject.GetComponent<RectTransform>();
       rectTransform.pivot = new Vector2(0, 0);
@@ -372,7 +398,7 @@ namespace Domino {
     }
 
     public void Update() {
-      if (instantiator == null) {
+      if (loader == null) {
         // We aren't initialized yet
         return;
       }

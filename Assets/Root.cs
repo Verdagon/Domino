@@ -1,27 +1,22 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
+using AthPlayer;
 using Domino;
 using Geomancer;
 using Geomancer.Model;
 using UnityEngine;
 using Virtence.VText;
 
-public class SimpleFuture<T> {
-  public delegate void IOnComplete(T value);
-  public event IOnComplete OnComplete;
-
-  public void Resolve(T value) {
-    OnComplete.Invoke(value);
-  }
-}
-
 public interface ILoader {
   Material white { get; }
   Material black { get; }
   Material glowWhite { get; }
-  SimpleFuture<Mesh> getMeshMaybeAsync(VTextParameters symbolId);
+  VText getSymbolMesh(VTextParameters symbolId);
+  Font LoadFont(string name);
+  GameObject NewEmptyUIObject();
   GameObject NewEmptyGameObject();
   GameObject NewEmptyGameObject(Vector3 position, Quaternion rotation);
   GameObject NewQuad();
@@ -50,56 +45,45 @@ public class Root : MonoBehaviour, ILoader {
   private Camera camera;
   private Canvas canvas;
 
-  private Dictionary<VTextParameters, SimpleFuture<Mesh>> vtextParametersToMesh;
+  private OverlayPaneler overlayPaneler;
 
-  public SimpleFuture<Mesh> getMeshMaybeAsync(VTextParameters parameters) {
-    if (vtextParametersToMesh.TryGetValue(parameters, out SimpleFuture<Mesh> value)) {
-      return value;
-    }
+  private CameraController cameraController;
+
+  private SlowableTimerClock clock;
+
+  private LookPanelView lookPanelView;
+  private Location maybeLookedLocation;
     
-    var promise = new SimpleFuture<Mesh>();
+  private TerrainPresenter terrainPresenter;
+
+  private Dictionary<KeyCode, string> memberByKeyCode;
+
+  private SortedSet<Location> selectedLocations = new SortedSet<Location>();
+
+  private ListView membersView;
+
+  // public so we can see it in the unity editor
+  public bool finishedStartMethod = false;
+
+  public VText getSymbolMesh(VTextParameters parameters) {
     GameObject vtextGameObject = Instantiate(Resources.Load("VText")) as GameObject;
-    if (vtextGameObject == null) {
-      Debug.LogError("Couldn't instantiate VText!");
-      return promise;
-    }
-    bool finished = false;
+    Asserts.Assert(vtextGameObject != null, "Couldn't instantiate VText!");
     VText vtext = vtextGameObject.GetComponent<VText>();
-    vtext.MeshParameter.FontName = parameters.symbolId.fontName + (parameters.expanded ? "Expanded.ttf" : "Simplified.ttf");
+    vtext.MeshParameter.FontName = parameters.symbolId.fontName + (parameters.expanded ? "Expanded.ttf" : ".ttf");
     vtext.SetText(char.ConvertFromUtf32(parameters.symbolId.unicode));
     vtext.RenderParameter.Materials = new[] {black, black, black};
     vtext.MeshParameter.Depth = parameters.extruded ? 1 : 0;
     vtext.Rebuild();
-    vtext.TextRenderingFinished += (s, a) => {
-      if (finished) {
-        return;
-      }
-      finished = true;
-      
-      var vtextMesh = vtext.GetComponentInChildren<MeshFilter>().sharedMesh;
-      
-      var mesh = new Mesh();
-      mesh.SetVertices(vtextMesh.vertices);
-      mesh.SetNormals(vtextMesh.normals);
-      mesh.SetTriangles(vtextMesh.GetTriangles(0), 0);
-      mesh.RecalculateNormals();
-      mesh.RecalculateBounds();
-      mesh.RecalculateTangents();
-      
-      Debug.Log("Finished loading symbol! tris: " + mesh.triangles.Length);
-      promise.Resolve(mesh);
-      // promise.OnComplete(mesh);
-      // Asserts.Assert(didSet);
-      // Destroy(vtextGameObject);
-    };
-    vtextParametersToMesh.Add(parameters, promise);
     
-    return promise;
+    return vtext;
   }
 
   public Material white { get; private set; }
   public Material black { get; private set; }
   public Material glowWhite { get; private set; }
+  public GameObject NewEmptyUIObject() {
+    return Instantiate(Resources.Load("EmptyUIObject")) as GameObject;  
+  }
   public GameObject NewEmptyGameObject() {
     return Instantiate(Resources.Load("EmptyGameObject")) as GameObject;  
   }
@@ -109,12 +93,26 @@ public class Root : MonoBehaviour, ILoader {
   public GameObject NewQuad() {
     return Instantiate(Resources.Load("Quad")) as GameObject;  
   }
+  public Font LoadFont(string name) {
+    // var folderPath = Application.streamingAssetsPath + "/Fonts";  //Get path of folder
+    // // filePaths = Directory.GetFiles(folderPath, "*.png"); // Get all files of type .png in this folder
+    // var filePath = folderPath + "/" + name + ".ttf";
+    // byte[] pngBytes = System.IO.File.ReadAllBytes(filePath);
+    // var font = new Font();
+    // font.
+    var loaded = Resources.Load("Fonts/" + name);
+    if (loaded == null) {
+      Debug.LogError("Couldn't load " + name);
+      return null;
+    }
+    return loaded as Font;
+  }
   
   void Start() {
     camera = GetComponentInChildren<Camera>();
     canvas = GetComponentInChildren<Canvas>();
 
-    vtextParametersToMesh = new Dictionary<VTextParameters, SimpleFuture<Mesh>>();
+    // vtextParametersToMesh = new Dictionary<VTextParameters, SimpleFuture<GameObject>>();
 
     white = Instantiate(Resources.Load("White")) as Material;
     white.color = Color.white;
@@ -130,93 +128,8 @@ public class Root : MonoBehaviour, ILoader {
     black.color = Color.black;
     white.enableInstancing = true;
     
-    doThings();
-  }
 
-  void doThings() {
-    
-    var clock = new SlowableTimerClock(1.0f);
-
-    var tileObjects = new List<GameObject>();
-    var outlineObjects = new List<GameObject>();
-
-    var rand = new Rand(1337);
-
-    var pattern = PentagonPattern9.makePentagon9Pattern();
-    var terrain = new Geomancer.Model.Terrain(pattern, 300, new SortedDictionary<Location, TerrainTile>());
-    for (int groupX = 0; groupX < 5; groupX++) {
-      for (int groupY = 0; groupY < 5; groupY++) {
-        for (int tileIndex = 0; tileIndex < pattern.patternTiles.Count; tileIndex++) {
-          int elevation = rand.Next() % 5 + 1;
-          var loc = new Location(groupX, groupY, tileIndex);
-          terrain.tiles.Add(loc, new TerrainTile(loc, elevation, new List<string>()));
-        }
-      }
-    }
-
-    var tileShapeMeshCache = new TileShapeMeshCache(pattern);
-
-    var locs = new List<Location>(terrain.tiles.Keys);
-    foreach (var location in locs) {
-      var tile = terrain.tiles[location];
-      int lowestNeighborElevation = tile.elevation;
-      foreach (var neighborLoc in pattern.GetAdjacentLocations(tile.location, false)) {
-        if (terrain.TileExists(neighborLoc)) {
-          lowestNeighborElevation = Math.Min(lowestNeighborElevation, terrain.tiles[neighborLoc].elevation);
-        } else {
-          lowestNeighborElevation = 0;
-        }
-      }
-      int depth = Math.Max(1, tile.elevation - lowestNeighborElevation);
-
-      var patternTile = pattern.patternTiles[tile.location.indexInGroup];
-
-      var highlighted = false;
-      var frontColor = highlighted ? Vector4Animation.Color(.1f, .1f, .1f) : Vector4Animation.Color(0f, 0, 0f);
-      var sideColor = highlighted ? Vector4Animation.Color(.1f, .1f, .1f) : Vector4Animation.Color(0f, 0, 0f);
-
-      var patternTileIndex = tile.location.indexInGroup;
-      var shapeIndex = pattern.patternTiles[patternTileIndex].shapeIndex;
-      var radianards = pattern.patternTiles[patternTileIndex].rotateRadianards;
-      var radians = radianards * 0.001f;
-      var degrees = (float)(radians * 180f / Math.PI);
-      var rotation = Quaternion.AngleAxis(-degrees, Vector3.up);
-      var unityElevationStepHeight = terrain.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier;
-      var (groundMesh, outlinesMesh) = tileShapeMeshCache.Get(shapeIndex, unityElevationStepHeight, .025f);
-
-      var position = pattern.GetTileCenter(location).ToVec3().ToUnity();
-      position.y += unityElevationStepHeight * tile.elevation;
-      
-      var tileView =
-          TileView.Create(
-              this,
-              groundMesh,
-              outlinesMesh,
-              clock,
-              clock,
-              new TileDescription(
-                  unityElevationStepHeight,
-                  patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-                  depth,
-                  frontColor,
-                  sideColor,
-                  null,
-                  new ExtrudedSymbolDescription(
-                      RenderPriority.SYMBOL,
-                      new SymbolDescription(
-                          new SymbolId("AthSymbols", 0x002B),
-                          Vector4Animation.Color(.8f, 0, .8f, 1.5f),
-                          0,
-                          1,
-                          OutlineMode.NoOutline),
-                      true,
-                      Vector4Animation.BLACK),
-                  new List<(ulong, ExtrudedSymbolDescription)>()));
-      tileView.gameObject.transform.localPosition = position;
-      tileObjects.AddRange(tileView.groundGameObjects);
-      outlineObjects.AddRange(tileView.outlineGameObjects);
-    }
-
+    //
     // foreach (var groundGameObject in tileObjects) {
     //   groundGameObject.isStatic = true;
     // }
@@ -225,9 +138,341 @@ public class Root : MonoBehaviour, ILoader {
     // }
     // StaticBatchingUtility.Combine(tileObjects.ToArray(), Instantiate(Resources.Load("EmptyGameObject")) as GameObject);
     // StaticBatchingUtility.Combine(outlineObjects.ToArray(), Instantiate(Resources.Load("EmptyGameObject")) as GameObject);
+    
+    
+    
+      clock = new SlowableTimerClock(1.0f);
+
+      memberByKeyCode = new Dictionary<KeyCode, string>() {
+        [KeyCode.B] = "Fire",
+        [KeyCode.G] = "Grass",
+        [KeyCode.M] = "Mud",
+        [KeyCode.D] = "Dirt",
+        [KeyCode.R] = "Rocks",
+        [KeyCode.O] = "Obsidian",
+        [KeyCode.S] = "DarkRocks",
+        [KeyCode.X] = "Marker",
+        [KeyCode.C] = "Cave",
+        [KeyCode.F] = "Floor",
+        [KeyCode.T] = "Tree",
+        [KeyCode.L] = "Magma",
+        [KeyCode.H] = "HealthPotion",
+        [KeyCode.P] = "ManaPotion",
+        [KeyCode.W] = "CaveWall",
+        [KeyCode.Z] = "ObsidianFloor",
+        [KeyCode.V] = "Avelisk",
+        [KeyCode.Z] = "Zeddy",
+        [KeyCode.Hash] = "Wall",
+        [KeyCode.BackQuote] = "Water",
+      };
+
+      overlayPaneler = new OverlayPaneler(canvas.gameObject, this, clock);
+      lookPanelView = new LookPanelView(overlayPaneler, -1, 2);
+
+      //var pattern = SquarePattern.MakeSquarePattern();
+      //var pattern = HexPattern.MakeHexPattern();
+
+      var pattern = PentagonPattern9.makePentagon9Pattern();
+      var terrain = new Geomancer.Model.Terrain(pattern, 200, new SortedDictionary<Location, TerrainTile>());
+
+      using (var fileStream = new FileStream("level.athlev", FileMode.OpenOrCreate)) {
+        using (var reader = new StreamReader(fileStream)) {
+          while (true) {
+            string line = reader.ReadLine();
+            if (line == null) {
+              break;
+            }
+            if (line == "") {
+              continue;
+            }
+            string[] parts = line.Split(' ');
+            int groupX = int.Parse(parts[0]);
+            int groupY = int.Parse(parts[1]);
+            int indexInGroup = int.Parse(parts[2]);
+            int elevation = int.Parse(parts[3]);
+
+            var location = new Location(groupX, groupY, indexInGroup);
+            var tile = new TerrainTile(location, elevation, new List<string>());
+            terrain.tiles.Add(location, tile);
+
+            for (int i = 4; i < parts.Length; i++) {
+              tile.members.Add(parts[i]);
+            }
+          }
+        }
+      }
+
+      if (terrain.tiles.Count == 0) {
+        var tile = new TerrainTile(new Location(0, 0, 0), 1, new List<string>());
+        terrain.tiles.Add(new Location(0, 0, 0), tile);
+      }
+
+      var tileShapeMeshCache = new TileShapeMeshCache(pattern);
+      terrainPresenter = new TerrainPresenter(clock, clock, MemberToViewMap.MakeVivimap(), terrain, this, tileShapeMeshCache);
+      terrainPresenter.PhantomTileClicked += HandlePhantomTileClicked;
+      terrainPresenter.TerrainTileClicked += HandleTerrainTileClicked;
+      terrainPresenter.TerrainTileHovered += HandleTerrainTileHovered;
+
+      Location startLocation = new Location(0, 0, 0);
+      if (!terrain.tiles.ContainsKey(startLocation)) {
+        foreach (var locationAndTile in terrain.tiles) {
+          startLocation = locationAndTile.Key;
+          break;
+        }
+      }
+
+      cameraController =
+        new CameraController(
+          clock,
+          camera,
+          terrain.GetTileCenter(startLocation).ToUnity(),
+          new Vector3(0, -10, 5));
+
+      membersView =
+        new ListView(
+          overlayPaneler.MakePanel(
+            0, 0, 40, 16));
+
+      finishedStartMethod = true;
   }
 
-  void Update() {
-    
-  }
+    public void HandlePhantomTileClicked(Location location) {
+      var terrainTile = new TerrainTile(location, 1, new List<string>());
+      terrainPresenter.AddTile(terrainTile);
+      Save();
+
+      var newSelection = new SortedSet<Location>(selectedLocations);
+      newSelection.Add(location);
+      SetSelection(newSelection);
+    }
+
+    public void HandleTerrainTileClicked(Location location) {
+      var newSelection = new SortedSet<Location>(selectedLocations);
+      if (newSelection.Contains(location)) {
+        newSelection.Remove(location);
+      } else {
+        newSelection.Add(location);
+      }
+      SetSelection(newSelection);
+    }
+
+    public void HandleTerrainTileHovered(Location location) {
+      UpdateLookPanelView();
+    }
+
+    private void UpdateLookPanelView() {
+      var location = terrainPresenter.GetMaybeMouseHighlightLocation();
+      if (location != maybeLookedLocation) {
+        maybeLookedLocation = location;
+        if (location == null) {
+          lookPanelView.SetStuff(false, "", "", new List<KeyValuePair<SymbolDescription, string>>());
+        } else {
+          var message = "(" + location.groupX + ", " + location.groupY + ", " + location.indexInGroup + ")";
+
+          var symbolsAndDescriptions = new List<KeyValuePair<SymbolDescription, string>>();
+          if (terrainPresenter.terrain.tiles.ContainsKey(location)) {
+            message += " elevation " + terrainPresenter.terrain.tiles[location].elevation;
+            foreach (var member in terrainPresenter.terrain.tiles[location].members) {
+              var symbol =
+              new SymbolDescription(
+                  new SymbolId("AthSymbols", 0x0072),
+                              Vector4Animation.Color(1f, 1f, 1f, 0), 180, 1, OutlineMode.WithOutline, Vector4Animation.Color(1, 1, 1));
+              symbolsAndDescriptions.Add(new KeyValuePair<SymbolDescription, string>(symbol, member));
+            }
+          }
+
+          lookPanelView.SetStuff(true, message, "", symbolsAndDescriptions);
+        }
+      }
+    }
+
+    public void Update() {
+      if (!finishedStartMethod) {
+        // There was probably an error in the logs that said why we're not loaded
+        return;
+      }
+
+      clock.Update();
+
+      if (Input.GetKey(KeyCode.RightBracket)) {
+        cameraController.MoveIn(Time.deltaTime);
+      }
+      if (Input.GetKey(KeyCode.LeftBracket)) {
+        cameraController.MoveOut(Time.deltaTime);
+      }
+      if (Input.GetKey(KeyCode.UpArrow)) {
+        cameraController.MoveUp(Time.deltaTime);
+      }
+      if (Input.GetKey(KeyCode.DownArrow)) {
+        cameraController.MoveDown(Time.deltaTime);
+      }
+      if (Input.GetKey(KeyCode.RightArrow)) {
+        cameraController.MoveRight(Time.deltaTime);
+      }
+      if (Input.GetKey(KeyCode.LeftArrow)) {
+        cameraController.MoveLeft(Time.deltaTime);
+      }
+      if (Input.GetKeyDown(KeyCode.Escape)) {
+        SetSelection(new SortedSet<Location>());
+      }
+      if (Input.GetKeyDown(KeyCode.Slash)) {
+        var allLocations = new SortedSet<Location>();
+        foreach (var locationAndTile in terrainPresenter.terrain.tiles) {
+          allLocations.Add(locationAndTile.Key);
+        }
+        SetSelection(allLocations);
+      }
+      if (Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.Plus) || Input.GetKeyDown(KeyCode.Mouse2)) {
+      
+        foreach (var loc in selectedLocations) {
+          terrainPresenter.GetTilePresenter(loc).SetElevation(terrainPresenter.terrain.tiles[loc].elevation + 1);
+        }
+        Save();
+        UpdateLookPanelView();
+      }
+      if (Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.Underscore) || Input.GetKeyDown(KeyCode.Mouse1)) {
+        foreach (var loc in selectedLocations) {
+          terrainPresenter.GetTilePresenter(loc).SetElevation(
+              Math.Max(1, terrainPresenter.terrain.tiles[loc].elevation - 1));
+        }
+        Save();
+        UpdateLookPanelView();
+      }
+      if (Input.GetKeyDown(KeyCode.Delete)) {
+        foreach (var loc in new SortedSet<Location>(selectedLocations)) {
+          selectedLocations.Remove(loc);
+          var tile = terrainPresenter.terrain.tiles[loc];
+          terrainPresenter.terrain.tiles.Remove(loc);
+          tile.Destruct();
+        }
+        Save();
+        UpdateLookPanelView();
+      }
+      foreach (var keyCodeAndMember in memberByKeyCode) {
+        if (Input.GetKeyDown(keyCodeAndMember.Key)) {
+          bool addKeyDown = Input.GetKey(KeyCode.RightAlt);
+          bool removeKeyDown = Input.GetKey(KeyCode.LeftAlt);
+          ChangeMember(keyCodeAndMember.Value, addKeyDown, removeKeyDown);
+          Save();
+        }
+        UpdateLookPanelView();
+      }
+
+      UnityEngine.Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+      terrainPresenter.UpdateMouse(ray);
+    }
+
+    private void SetSelection(SortedSet<Location> locations) {
+      selectedLocations = locations;
+      terrainPresenter.SetHighlightedLocations(selectedLocations);
+
+      SortedSet<string> commonMembers = null;
+      foreach (var loc in selectedLocations) {
+        if (commonMembers == null) {
+          commonMembers = new SortedSet<string>();
+          foreach (var member in terrainPresenter.terrain.tiles[loc].members) {
+            commonMembers.Add(member);
+          }
+        } else {
+          var members = new SortedSet<string>();
+          foreach (var member in terrainPresenter.terrain.tiles[loc].members) {
+            members.Add(member);
+          }
+          foreach (var member in new SortedSet<string>(commonMembers)) {
+            if (!members.Contains(member)) {
+              commonMembers.Remove(member);
+            }
+          }
+        }
+      }
+
+      var entries = new List<ListView.Entry>();
+      if (commonMembers != null) {
+        foreach (var member in commonMembers) {
+          entries.Add(new ListView.Entry(new SymbolId("AthSymbols", 0x0072), member));
+        }
+      }
+      membersView.ShowEntries(entries);
+    }
+
+    private void ChangeMember(string member, bool addKeyDown, bool removeKeyDown) {
+      if (addKeyDown && removeKeyDown) {
+        return;
+      } else if (addKeyDown) {
+        // Add one to each tile
+        foreach (var location in selectedLocations) {
+          terrainPresenter.GetTilePresenter(location).AddMember(member);
+        }
+      } else if (removeKeyDown) {
+        foreach (var location in selectedLocations) {
+          if (LocationHasMember(location, member)) {
+            terrainPresenter.GetTilePresenter(location).RemoveMember(member);
+          }
+        }
+      } else {
+        // Toggle; ensure it's there if its not
+        if (!AllLocationsHaveMember(selectedLocations, member)) {
+          foreach (var location in selectedLocations) {
+            // Add it if its not already there
+            if (!LocationHasMember(location, member)) {
+              terrainPresenter.GetTilePresenter(location).AddMember(member);
+            }
+          }
+        } else {
+          foreach (var location in selectedLocations) {
+            // Remove all of them that are present
+            while (LocationHasMember(location, member)) {
+              terrainPresenter.GetTilePresenter(location).RemoveMember(member);
+            }
+          }
+        }
+      }
+      
+    }
+
+    private bool AllLocationsHaveMember(SortedSet<Location> locations, string member) {
+      foreach (var location in locations) {
+        if (!LocationHasMember(location, member)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    private bool LocationHasMember(Location location, string member) {
+      foreach (var hayMember in terrainPresenter.terrain.tiles[location].members) {
+        if (member == hayMember) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    private void Save() {
+      using (var fileStream = new FileStream("level.athlev", FileMode.Create)) {
+        using (var writer = new StreamWriter(fileStream)) {
+          Save(writer);
+        }
+      }
+
+      var timestamp = (int)new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+      using (var fileStream = new FileStream("level" + timestamp + ".athlev", FileMode.Create)) {
+        using (var writer = new StreamWriter(fileStream)) {
+          Save(writer);
+        }
+      }
+    }
+
+    private void Save(StreamWriter writer) {
+      foreach (var locAndTile in terrainPresenter.terrain.tiles) {
+        var loc = locAndTile.Key;
+        var tile = locAndTile.Value;
+        string line = loc.groupX + " " + loc.groupY + " " + loc.indexInGroup + " " + tile.elevation;
+        foreach (var member in tile.members) {
+          line += " " + member;
+        }
+        writer.WriteLine(line);
+      }
+      writer.Close();
+    }
 }

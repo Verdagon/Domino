@@ -8,14 +8,14 @@ using AthPlayer;
 namespace Domino {
   public class CameraController {
     private IClock clock;
-    private GameObject cameraObject;
+    private Camera cameraObject;
     // Where it's supposed to be, after all the animations are done.
     private Vector3 cameraEndLookAtPosition;
     private Vector3 cameraOffsetToLookAt;
 
     private readonly static float cameraSpeedPerSecond = 8.0f;
 
-    public CameraController(IClock clock, GameObject cameraObject, Vector3 initialLookAtPosition, Vector3 initialCameraOffsetToLookAt) {
+    public CameraController(IClock clock, Camera cameraObject, Vector3 initialLookAtPosition, Vector3 initialCameraOffsetToLookAt) {
       this.clock = clock;
       this.cameraObject = cameraObject;
 
@@ -29,10 +29,10 @@ namespace Domino {
     private CameraAnimator GetOrCreateCameraAnimator() {
       var animator = cameraObject.GetComponent<CameraAnimator>();
       if (animator == null) {
-        animator = cameraObject.AddComponent<CameraAnimator>();
+        animator = cameraObject.gameObject.AddComponent<CameraAnimator>();
         animator.Init(
           clock,
-          cameraObject,
+          cameraObject.gameObject,
           new IdentityVector3Animation(),
           new IdentityVector3Animation());
       }

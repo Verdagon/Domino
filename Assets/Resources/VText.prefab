@@ -132,7 +132,7 @@ MonoBehaviour:
     _modified: 0
     _rebuild: 0
   MeshParameter:
-    _depth: 0
+    _depth: 1
     _bevel: 0
     _bevelStyle: 0
     _bevelProfile:
@@ -147,14 +147,14 @@ MonoBehaviour:
     _crease: 89
     _resolution: 0.01
     _fontName: AthSymbols.ttf
-    _text: 
+    _text: b
     _modified: 0
     _rebuild: 0
   RenderParameter:
     _materials:
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
+    - {fileID: 2100000, guid: 2884e657537364c8b9a3e4cbc3fbfabb, type: 2}
+    - {fileID: 2100000, guid: 2884e657537364c8b9a3e4cbc3fbfabb, type: 2}
+    - {fileID: 2100000, guid: 2884e657537364c8b9a3e4cbc3fbfabb, type: 2}
     _shadowCastMode: 1
     _receiveShadows: 1
     _lightProbeUsage: 1

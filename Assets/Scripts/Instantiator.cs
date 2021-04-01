@@ -201,31 +201,6 @@ namespace Domino {
       return Instantiate(squarePrefab);
     }
 
-    public OverlayPanelView CreateOverlayPanelView(
-        GameObject parent,
-        IClock cinematicTimer,
-        float panelUnityXInParent,
-        float panelUnityYInParent,
-        int symbolsWide,
-        int symbolsHigh,
-        float symbolWidth,
-        float symbolHeight) {
-      var obj = Instantiate(emptyUiObject);
-      var spv = obj.AddComponent<OverlayPanelView>();
-      spv.Init(
-        this,
-        cinematicTimer,
-        parent,
-        panelUnityXInParent,
-        panelUnityYInParent,
-        symbolsWide,
-        symbolsHigh,
-        symbolWidth,
-        symbolHeight);
-        //500, -500, -0, 500, 1000, -1000, -500);
-      return spv;
-    }
-
     //private Mesh Simplify(Mesh sourceMesh, int qualityPercent) {
     //  var meshSimplifier = new UnityMeshSimplifier.MeshSimplifier();
     //  //meshSimplifier.PreserveBorderEdges = true;

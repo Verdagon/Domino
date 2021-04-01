@@ -24,8 +24,9 @@ namespace Geomancer {
     MemberToViewMapper vivimap;
     public readonly Location location;
     TerrainTile terrainTile;
-    Instantiator instantiator;
+    ILoader loader;
     private Geomancer.Model.Terrain terrain;
+    private TileShapeMeshCache tileShapeMeshCache;
 
     TileView tileView;
     UnitView unitView;
@@ -54,14 +55,16 @@ namespace Geomancer {
         Geomancer.Model.Terrain terrain,
         Location location,
         TerrainTile terrainTile,
-        Instantiator instantiator) {
+        ILoader loader,
+        TileShapeMeshCache tileShapeMeshCache) {
       this.clock = clock;
       this.timer = timer;
       this.vivimap = vivimap;
       this.location = location;
       this.terrainTile = terrainTile;
-      this.instantiator = instantiator;
+      this.loader = loader;
       this.terrain = terrain;
+      this.tileShapeMeshCache = tileShapeMeshCache;
 
       var eternalMemberId = nextMemberId++;
       membersFrontColors.Add((eternalMemberId, Vector4Animation.Color(.4f, .4f, 0, 1)));
@@ -75,30 +78,60 @@ namespace Geomancer {
       var pattern = terrain.pattern;
       var symbolId = GetTerrainTileShapeSymbol(patternTile);
 
-      Asserts.Assert(false);
-      // var initialTileDescription =
-      //     new TileDescription(
-      //         terrain.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier, // elevation
-      //         patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-      //         terrainTile.elevation, // depth
-      //         new ExtrudedSymbolDescription(
-      //             RenderPriority.TILE,
-      //             new SymbolDescription(
-      //                 symbolId, // symbol id
-      //                 CalculateTintedFrontColor(membersFrontColors[membersFrontColors.Count - 1].Item2, selected, highlighted),
-      //                 patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-      //                 1, // scale
-      //                 OutlineMode.WithOutline,
-      //                 Vector4Animation.Color(0, 0, 0)), // outline
-      //             true,
-      //             membersSideColors[membersSideColors.Count - 1].Item2),
-      //         CalculateMaybeOverlay(membersOverlays),
-      //         CalculateMaybeFeature(membersFeatures),
-      //         membersItems);
+      var initialTileDescription =
+          new TileDescription(
+              terrain.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier, // elevation
+              patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
+              terrainTile.elevation, // depth
+              CalculateTintedFrontColor(membersFrontColors[membersFrontColors.Count - 1].Item2, selected, highlighted),
+              membersSideColors[membersSideColors.Count - 1].Item2,
+              // new ExtrudedSymbolDescription(
+              //     RenderPriority.TILE,
+              //     new SymbolDescription(
+              //         symbolId, // symbol id
+              //         ,
+              //         patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
+              //         1, // scale
+              //         OutlineMode.WithOutline,
+              //         Vector4Animation.Color(0, 0, 0)), // outline
+              //     true,
+              //     ),
+              CalculateMaybeOverlay(membersOverlays),
+              CalculateMaybeFeature(membersFeatures),
+              membersItems);
+      
+      var position = CalculatePosition(terrain.elevationStepHeight, terrain.pattern, location, terrainTile.elevation);
+      
+      //   var tile = terrain.tiles[location];
+      //   int lowestNeighborElevation = tile.elevation;
+      //   foreach (var neighborLoc in pattern.GetAdjacentLocations(tile.location, false)) {
+      //     if (terrain.TileExists(neighborLoc)) {
+      //       lowestNeighborElevation = Math.Min(lowestNeighborElevation, terrain.tiles[neighborLoc].elevation);
+      //     } else {
+      //       lowestNeighborElevation = 0;
+      //     }
+      //   }
+      //   int depth = Math.Max(1, tile.elevation - lowestNeighborElevation);
       //
-      // var position = CalculatePosition(terrain.elevationStepHeight, terrain.pattern, location, terrainTile.elevation);
-      // tileView = instantiator.CreateTileView(clock, timer, position, initialTileDescription);
-      // tileView.gameObject.AddComponent<TerrainTilePresenterTile>().Init(this);
+      //   var patternTile = pattern.patternTiles[tile.location.indexInGroup];
+      //
+      //   var highlighted = false;
+      //   var frontColor = highlighted ? Vector4Animation.Color(.1f, .1f, .1f) : Vector4Animation.Color(0f, 0, 0f);
+      //   var sideColor = highlighted ? Vector4Animation.Color(.1f, .1f, .1f) : Vector4Animation.Color(0f, 0, 0f);
+      //
+      var patternTileIndex = location.indexInGroup;
+      var shapeIndex = pattern.patternTiles[patternTileIndex].shapeIndex;
+      //   var radianards = pattern.patternTiles[patternTileIndex].rotateRadianards;
+      //   var radians = radianards * 0.001f;
+      //   var degrees = (float)(radians * 180f / Math.PI);
+      //   var rotation = Quaternion.AngleAxis(-degrees, Vector3.up);
+      var unityElevationStepHeight = terrain.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier;
+      var (groundMesh, outlinesMesh) = tileShapeMeshCache.Get(shapeIndex, unityElevationStepHeight, .025f);
+      
+      
+      tileView = TileView.Create(loader, groundMesh, outlinesMesh, clock, timer, initialTileDescription);
+      tileView.gameObject.AddComponent<TerrainTilePresenterTile>().Init(this);
+      tileView.gameObject.transform.localPosition = position;
     }
 
     private SymbolId GetTerrainTileShapeSymbol(PatternTile patternTile) {
@@ -168,8 +201,9 @@ namespace Geomancer {
                 membersDetails,
                 1,
                 1);
-        this.unitView =
-            instantiator.CreateUnitView(clock, null, position, unitDescription, new Vector3(0, -8, 16));
+        Asserts.Assert(false);
+        // this.unitView =
+        //     loader.CreateUnitView(clock, null, position, unitDescription, new Vector3(0, -8, 16));
       }
     }
 

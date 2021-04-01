@@ -60,7 +60,7 @@ namespace Virtence.VText
         /// <summary>
         /// the glyph builder
         /// </summary>
-        private VTextGlyphBuilder _glyphBuilder = null;
+        static VTextGlyphBuilder _glyphBuilder = null;
 
         /// <summary>
         /// the last used font
@@ -145,10 +145,12 @@ namespace Virtence.VText
 					font.GlyphMeshAttributesHash = new Dictionary<char, MeshAttributes>();
 
 					// create glyphs
-					_glyphBuilder = new VTextGlyphBuilder(_meshParameter, font);
+                    if (_glyphBuilder == null) {
+                        _glyphBuilder = new VTextGlyphBuilder(_meshParameter, font);
+                    }
 
 
-					_meshFilter = _glyphBuilder.AddGlyphMeshFilters(_children, _layout.Size);
+                    _meshFilter = _glyphBuilder.AddGlyphMeshFilters(_children, _layout.Size);
 
 					// add mesh renderer
 					var render = new VTextRenderer(_renderingParameter, _meshParameter);
@@ -188,7 +190,9 @@ namespace Virtence.VText
                     layouter.Layout(_meshParameter.Text, _children, font, false);
 
                     // create glyphs
-                    _glyphBuilder = new VTextGlyphBuilder(_meshParameter, font);                    
+                    if (_glyphBuilder == null) {
+                        _glyphBuilder = new VTextGlyphBuilder(_meshParameter, font);
+                    }
 
                     _meshFilter = _glyphBuilder.AddGlyphMeshFilters(_children, _layout.Size);
 

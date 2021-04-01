@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Domino {
   public class OverlayPaneler {
     GameObject panelRootGameObject;
-    Instantiator instantiator;
+    ILoader loader;
     IClock cinematicTimer;
     // U = in unity units
     // G = in grid units
@@ -18,10 +18,10 @@ namespace Domino {
 
     public OverlayPaneler(
         GameObject panelRootGameObject,
-        Instantiator instantiator,
+        ILoader loader,
         IClock cinematicTimer) {
       this.panelRootGameObject = panelRootGameObject;
-      this.instantiator = instantiator;
+      this.loader = loader;
       this.cinematicTimer = cinematicTimer;
 
       var parentRectTransform = panelRootGameObject.GetComponent<RectTransform>();
@@ -49,7 +49,8 @@ namespace Domino {
         int panelGW,
         int panelGH) {
       var spv =
-        instantiator.CreateOverlayPanelView(
+          OverlayPanelView.Create(
+              loader,
           panelRootGameObject,
           cinematicTimer,
           panelGXInScreen * symbolWidth + gridOriginUXInScreen,

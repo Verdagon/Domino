@@ -54,10 +54,10 @@ namespace Domino {
       z = z.Simplify(timeMs);
       w = w.Simplify(timeMs);
 
-      if (x is ConstantVector4Animation &&
-          y is ConstantVector4Animation &&
-          z is ConstantVector4Animation &&
-          w is ConstantVector4Animation) {
+      if (x is ConstantFloatAnimation &&
+          y is ConstantFloatAnimation &&
+          z is ConstantFloatAnimation &&
+          w is ConstantFloatAnimation) {
         return new ConstantVector4Animation(Get(timeMs));
       }
 
