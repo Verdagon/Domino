@@ -81,7 +81,7 @@ namespace Geomancer {
                     0,
                     1,
                     OutlineMode.WithOutline),
-                false,
+                true,
                 Vector4Animation.Color(0f, .3f, 0f)))
       });
       entries.Add("Fire", new List<MemberToViewMapper.IDescription>() {

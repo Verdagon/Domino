@@ -352,9 +352,10 @@ namespace Domino {
         float forward = 0.2f;
         var symbolView = SymbolView.Create(clock, loader, maybeFeature);
         symbolView.gameObject.transform.SetParent(gameObject.transform, false);
-        symbolView.gameObject.transform.localPosition = new Vector3(0, .25f + lift, -forward);
+        symbolView.gameObject.transform.localPosition = new Vector3(-scale/2, lift, -forward);
         symbolView.gameObject.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
         symbolView.gameObject.transform.localScale = new Vector3(scale, scale, 0.05f);
+        featureSymbolView = symbolView;
       }
     }
 
@@ -364,12 +365,14 @@ namespace Domino {
       }
       this.maybeOverlay = maybeOverlay;
       if (this.maybeOverlay != null) {
-        Asserts.Assert(false);
-        // overlaySymbolView = instantiator.CreateSymbolView(clock, true, maybeOverlay);
-        // overlaySymbolView.gameObject.transform.localPosition = new Vector3(0, .01f, 0);
-        // overlaySymbolView.gameObject.transform.localRotation = Quaternion.Euler(new Vector3(-90, 0, 0));
-        // overlaySymbolView.gameObject.transform.localScale = new Vector3(-1 * 0.707f, -1 * 0.707f, 1);
-        // overlaySymbolView.gameObject.transform.SetParent(transform, false);
+        float lift = 0.01f;
+        float scale = 0.707f;
+        var overlayView = SymbolView.Create(clock, loader, maybeOverlay);
+        overlayView.gameObject.transform.SetParent(transform, false);
+        overlayView.gameObject.transform.localPosition = new Vector3(-scale/2, lift, -scale/2);
+        overlayView.gameObject.transform.localRotation = Quaternion.Euler(new Vector3(90, 0, 0));
+        overlayView.gameObject.transform.localScale = new Vector3(scale, scale, 1);
+        overlaySymbolView = overlayView;
       }
     }
 
@@ -385,27 +388,25 @@ namespace Domino {
       while (groundGameObjects.Count < depth) {
         var newIndex = groundGameObjects.Count;
         
-        var facesObject = loader.NewQuad();
-        facesObject.GetComponent<MeshRenderer>().sharedMaterial = loader.white;
-        facesObject.GetComponent<MeshFilter>().sharedMesh = groundMesh;
-        facesObject.GetComponent<MeshCollider>().sharedMesh = groundMesh;
+        var rotation = Quaternion.AngleAxis(-tileRotationDegrees, Vector3.up);
+        var translate = new Vector3(0, -newIndex * elevationStepHeight, 0);
 
+        var groundObject = loader.NewQuad();
+        groundObject.GetComponent<MeshRenderer>().sharedMaterial = loader.white;
+        groundObject.GetComponent<MeshFilter>().sharedMesh = groundMesh;
+        groundObject.GetComponent<MeshCollider>().sharedMesh = groundMesh;
+        groundObject.transform.SetParent(gameObject.transform, false);
+        groundObject.transform.localPosition = translate;
+        groundObject.transform.localRotation = rotation;
+        groundGameObjects.Add(groundObject);
+        
         var outlinesObject = loader.NewQuad();
         outlinesObject.GetComponent<MeshRenderer>().sharedMaterial = loader.black;
         outlinesObject.GetComponent<MeshFilter>().sharedMesh = outlinesMesh;
         outlinesObject.GetComponent<MeshCollider>().sharedMesh = groundMesh;
-        
-        var rotation = Quaternion.AngleAxis(-tileRotationDegrees, Vector3.up);
-        var translate = new Vector3(0, -newIndex * elevationStepHeight, 0);
-        
-        facesObject.transform.SetParent(gameObject.transform, false);
-        facesObject.transform.localPosition = translate;
-        facesObject.transform.localRotation = rotation;
         outlinesObject.transform.SetParent(gameObject.transform, false);
         outlinesObject.transform.localPosition = translate;
         outlinesObject.transform.localRotation = rotation;
-        
-        groundGameObjects.Add(facesObject);
         outlineGameObjects.Add(outlinesObject);
       }
       RefreshFrontColor();

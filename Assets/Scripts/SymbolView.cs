@@ -98,8 +98,8 @@ namespace Domino {
     // Specified by unity.
     // public GameObject faceObject;
     // public GameObject sidesObject;
-    private VText faceObject;
-    private VText outlineObject;
+    private GameObject faceObject;
+    private GameObject outlineObject;
 
     private ILoader loader;
 
@@ -139,15 +139,18 @@ namespace Domino {
       this.symbolDescription = symbolDescription;
       
       var frontExtruded = symbolDescription.extruded && !(symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
-      faceObject = loader.getSymbolMesh(new VTextParameters(symbolDescription.symbol.symbolId, false, frontExtruded));
-      faceObject.RenderParameter.Materials = new[] { loader.black, loader.black, loader.black };
+      faceObject = loader.NewQuad();
+      faceObject.GetComponent<MeshFilter>().sharedMesh =
+          loader.getSymbolMesh(new MeshParameters(symbolDescription.symbol.symbolId, false, frontExtruded));
       faceObject.transform.SetParent(gameObject.transform, false);
       faceObject.transform.localScale = new Vector3(1, 1, frontExtruded ? 1 : 0);
       
       if (symbolDescription.symbol.isOutlined != OutlineMode.NoOutline) {
         var outlineExtruded = symbolDescription.extruded && (symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
-        outlineObject =
-            loader.getSymbolMesh(new VTextParameters(symbolDescription.symbol.symbolId, true, outlineExtruded));
+        outlineObject = loader.NewQuad();
+        var mesh = loader.getSymbolMesh(new MeshParameters(symbolDescription.symbol.symbolId, true, outlineExtruded));
+        outlineObject.GetComponent<MeshFilter>().sharedMesh = mesh;
+        outlineObject.GetComponent<MeshRenderer>().sharedMaterial = loader.black; 
         outlineObject.transform.SetParent(gameObject.transform, false);
         outlineObject.transform.localPosition = new Vector3(0, 0, 0.001f);
         outlineObject.transform.localScale = new Vector3(1, 1, 1); //outlineExtruded ? 1 : 0);

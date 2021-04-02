@@ -14,7 +14,7 @@ public interface ILoader {
   Material white { get; }
   Material black { get; }
   Material glowWhite { get; }
-  VText getSymbolMesh(VTextParameters symbolId);
+  Mesh getSymbolMesh(MeshParameters symbolId);
   Font LoadFont(string name);
   GameObject NewEmptyUIObject();
   GameObject NewEmptyGameObject();
@@ -22,12 +22,31 @@ public interface ILoader {
   GameObject NewQuad();
 }
 
-public struct VTextParameters {
+public struct FontParameters {
+  public readonly string fontName;
+  public readonly bool expanded;
+  public readonly bool extruded;
+
+  public FontParameters(
+      string fontName,
+      bool expanded,
+      bool extruded) {
+    this.fontName = fontName;
+    this.expanded = expanded;
+    this.extruded = extruded;
+  }
+
+  public override int GetHashCode() {
+    return fontName.GetHashCode() + (expanded ? 47 : 0) + (extruded ? 73 : 0);
+  }
+}
+
+public struct MeshParameters {
   public readonly SymbolId symbolId;
   public readonly bool expanded;
   public readonly bool extruded;
 
-  public VTextParameters(
+  public MeshParameters(
       SymbolId symbolId,
       bool expanded,
       bool extruded) {
@@ -65,17 +84,38 @@ public class Root : MonoBehaviour, ILoader {
   // public so we can see it in the unity editor
   public bool finishedStartMethod = false;
 
-  public VText getSymbolMesh(VTextParameters parameters) {
-    GameObject vtextGameObject = Instantiate(Resources.Load("VText")) as GameObject;
-    Asserts.Assert(vtextGameObject != null, "Couldn't instantiate VText!");
-    VText vtext = vtextGameObject.GetComponent<VText>();
-    vtext.MeshParameter.FontName = parameters.symbolId.fontName + (parameters.expanded ? "Expanded.ttf" : ".ttf");
-    vtext.SetText(char.ConvertFromUtf32(parameters.symbolId.unicode));
-    vtext.RenderParameter.Materials = new[] {black, black, black};
-    vtext.MeshParameter.Depth = parameters.extruded ? 1 : 0;
-    vtext.Rebuild();
+  private Dictionary<FontParameters, VTextGlyphBuilder> fontParamToGlyphBuilder;
+  // A cache for what we calculate from the glyph builders
+  private Dictionary<MeshParameters, Mesh> meshParamToMesh;
+
+  public Mesh getSymbolMesh(MeshParameters parameters) {
+    // GameObject vtextGameObject = Instantiate(Resources.Load("VText")) as GameObject;
+    // Asserts.Assert(vtextGameObject != null, "Couldn't instantiate VText!");
+    // VText vtext = vtextGameObject.GetComponent<VText>();
+    // vtext.MeshParameter.FontName = parameters.symbolId.fontName + (parameters.expanded ? "Expanded.ttf" : ".ttf");
+    // vtext.SetText(char.ConvertFromUtf32(parameters.symbolId.unicode));
+    // vtext.RenderParameter.Materials = new[] {black, black, black};
+    // vtext.MeshParameter.Depth = parameters.extruded ? 1 : 0;
+    // vtext.Rebuild();
+
+    if (meshParamToMesh.TryGetValue(parameters, out var m)) {
+      return m;
+    }
     
-    return vtext;
+    string s = char.ConvertFromUtf32(parameters.symbolId.unicode);
+    char c = s[0];
+    var fontParam = new FontParameters(parameters.symbolId.fontName, parameters.expanded, parameters.extruded);
+    if (fontParamToGlyphBuilder.TryGetValue(fontParam, out var glyphBuilder)) {
+      var mesh = glyphBuilder.GetMesh(c, 1.0f);
+      // Combine the submeshes into one submesh
+      mesh.SetTriangles(mesh.triangles, 0);
+      mesh.subMeshCount = 1;
+      meshParamToMesh.Add(parameters, mesh);
+      return mesh;
+    } else {
+      Asserts.Assert(false, "Font not loaded: " + parameters.symbolId.fontName);
+      return null;
+    }
   }
 
   public Material white { get; private set; }
@@ -109,10 +149,34 @@ public class Root : MonoBehaviour, ILoader {
   }
   
   void Start() {
+    meshParamToMesh = new Dictionary<MeshParameters, Mesh>();
+    fontParamToGlyphBuilder = new Dictionary<FontParameters, VTextGlyphBuilder>();
+    var fontNamesToLoad = new [] { "AthSymbols" };
+    foreach (var fontName in fontNamesToLoad) {
+      foreach (var expanded in new[]{ false, true }) {
+        var fontFilename = fontName + (expanded ? "Expanded.ttf" : ".ttf");
+        VTextFontHash.FetchFont(fontFilename, (font) => {
+          font.GlyphMeshAttributesHash = new Dictionary<char, MeshAttributes>();
+          foreach (var extruded in new[]{ false, true }) {
+            var param = new VTextMeshParameter();
+            param.Depth = extruded ? 1 : 0;
+            param.FontName = fontFilename;
+            var glyphBuilder = new VTextGlyphBuilder(param, font);
+            fontParamToGlyphBuilder.Add(new FontParameters(fontName, expanded, extruded), glyphBuilder);
+            if (fontParamToGlyphBuilder.Count == fontNamesToLoad.Length * 4) {
+              doThings();
+            }
+          }
+        });
+      }
+    }
+  }
+  
+  void doThings() {
     camera = GetComponentInChildren<Camera>();
     canvas = GetComponentInChildren<Canvas>();
 
-    // vtextParametersToMesh = new Dictionary<VTextParameters, SimpleFuture<GameObject>>();
+    // vtextParametersToMesh = new Dictionary<MeshParameters, SimpleFuture<GameObject>>();
 
     white = Instantiate(Resources.Load("White")) as Material;
     white.color = Color.white;
@@ -198,6 +262,9 @@ public class Root : MonoBehaviour, ILoader {
             for (int i = 4; i < parts.Length; i++) {
               tile.members.Add(parts[i]);
             }
+            // if (!tile.members.Contains("Tree")) {
+            //   tile.members.Add("Tree");
+            // }
           }
         }
       }

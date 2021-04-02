@@ -34,7 +34,7 @@ namespace AthPlayer {
         view.AddBackground(new UnityEngine.Color(0, 0, 0, .9f), new UnityEngine.Color(0, 0, 0, 0));
 
         for (int i = 0; i < entries.Count; i++) {
-          view.AddSymbol(0, 1, view.symbolsHigh - (i * 2 + 2), 2.0f, 0, new UnityEngine.Color(1, 1, 1), entries[i].symbol);
+          // view.AddSymbol(0, 1, view.symbolsHigh - (i * 2 + 2), 2.0f, 0, new UnityEngine.Color(1, 1, 1), entries[i].symbol);
           view.AddString(0, 5, view.symbolsHigh - (i * 2 + 2 - 0.5f), view.symbolsWide - 3, new UnityEngine.Color(1, 1, 1), Fonts.PROSE_OVERLAY_FONT, entries[i].text);
         }
       }

@@ -17,7 +17,7 @@ namespace Virtence.VText
     /// Creates beautiuly 3D Mesh for a glyph
     /// </summary>
     [UnityEngine.Scripting.Preserve]
-	internal class VTextGlyphBuilder
+	class VTextGlyphBuilder
     {
         #region FIELDS
 
@@ -122,6 +122,38 @@ namespace Virtence.VText
             }
 
             return filters;
+        }
+
+        public Mesh GetMesh(char currentChar, float size)
+        {
+            MeshAttributes mesh;
+            // if not already generated
+            if (!_glyphMeshes.ContainsKey(currentChar))
+            {
+                mesh = new MeshAttributes();
+                ApplyFrontface(ref mesh, currentChar);
+                if (mesh != null)
+                {
+                    _glyphMeshes.Add(currentChar, new MeshAttributes(mesh));
+                }
+            }
+            else
+            {
+                mesh = new MeshAttributes(_glyphMeshes[currentChar]) ?? new MeshAttributes();
+            }
+            ApplyBackface(ref mesh);
+            ApplySides(ref mesh);
+
+            if (mesh != null) {
+                Mesh m = mesh.ToMesh(size);
+                if(_meshParameter.GenerateTangents)
+                {
+                    m.RecalculateTangents();
+                }
+                return m;
+            }
+            Asserts.Assert(false);
+            return null;
         }
 
 #region glyphface
