@@ -6,30 +6,15 @@ using UnityEngine;
 using Domino;
 
 namespace Geomancer {
-  public class TerrainTilePresenterTile : MonoBehaviour {
-    // PhantomTilePresenter attaches this to the TileView it creates, so that when EditorPresenter
-    // raycasts, it can know the PhantomTilePresenter that owns this TileView.
-    // This approach is an implementation detail of the Editor, and shouldnt enter Domino.
-    public TerrainTilePresenter presenter;
-
-    public void Init(TerrainTilePresenter presenter) {
-      this.presenter = presenter;
-    }
-  }
-
   public class TerrainTilePresenter {
-    IClock clock;
-    ITimer timer;
-    
-    MemberToViewMapper vivimap;
+    private GameToDominoConnection domino;
+    private MemberToViewMapper vivimap;
     public readonly Location location;
-    TerrainTile terrainTile;
-    ILoader loader;
+    private TerrainTile terrainTile;
     private Geomancer.Model.Terrain terrain;
-    private TileShapeMeshCache tileShapeMeshCache;
 
-    TileView tileView;
-    UnitView unitView;
+    ulong tileViewId;
+    ulong unitViewId;
 
     private ulong nextMemberId = 1;
     // (member ID, member string)
@@ -38,33 +23,28 @@ namespace Geomancer {
     // (member ID, value)
     private List<(ulong, IVector4Animation)> membersFrontColors = new List<(ulong, IVector4Animation)>();
     private List<(ulong, IVector4Animation)> membersSideColors = new List<(ulong, IVector4Animation)>();
-    private List<(ulong, ExtrudedSymbolDescription)> membersFeatures = new List<(ulong, ExtrudedSymbolDescription)>();
-    private List<(ulong, ExtrudedSymbolDescription)> membersOverlays = new List<(ulong, ExtrudedSymbolDescription)>();
-    private List<(ulong, ExtrudedSymbolDescription)> membersItems = new List<(ulong, ExtrudedSymbolDescription)>();
-    private List<(ulong, DominoDescription)> membersDominos = new List<(ulong, DominoDescription)>();
-    private List<(ulong, ExtrudedSymbolDescription)> membersUnitFaces = new List<(ulong, ExtrudedSymbolDescription)>();
-    private List<(ulong, ExtrudedSymbolDescription)> membersDetails = new List<(ulong, ExtrudedSymbolDescription)>();
+    private List<(ulong, InitialSymbol)> membersFeatures = new List<(ulong, InitialSymbol)>();
+    private List<(ulong, InitialSymbol)> membersOverlays = new List<(ulong, InitialSymbol)>();
+    private List<(ulong, InitialSymbol)> membersItems = new List<(ulong, InitialSymbol)>();
+    private List<(ulong, DominoShape)> membersDominoShapes = new List<(ulong, DominoShape)>();
+    private List<(ulong, IVector4Animation)> membersDominoColors = new List<(ulong, IVector4Animation)>();
+    private List<(ulong, InitialSymbol)> membersUnitFaces = new List<(ulong, InitialSymbol)>();
+    private List<(ulong, InitialSymbol)> membersDetails = new List<(ulong, InitialSymbol)>();
 
     private bool highlighted;
     private bool selected;
 
     public TerrainTilePresenter(
-      IClock clock,
-      ITimer timer,
+        GameToDominoConnection domino,
         MemberToViewMapper vivimap,
         Geomancer.Model.Terrain terrain,
         Location location,
-        TerrainTile terrainTile,
-        ILoader loader,
-        TileShapeMeshCache tileShapeMeshCache) {
-      this.clock = clock;
-      this.timer = timer;
+        TerrainTile terrainTile) {
+      this.domino = domino;
       this.vivimap = vivimap;
       this.location = location;
       this.terrainTile = terrainTile;
-      this.loader = loader;
       this.terrain = terrain;
-      this.tileShapeMeshCache = tileShapeMeshCache;
 
       var eternalMemberId = nextMemberId++;
       membersFrontColors.Add((eternalMemberId, Vector4Animation.Color(.4f, .4f, 0, 1)));
@@ -74,28 +54,15 @@ namespace Geomancer {
         OnAddMember(member);
       }
 
-      var patternTile = terrain.pattern.patternTiles[location.indexInGroup];
+      // var patternTile = terrain.pattern.patternTiles[location.indexInGroup];
       var pattern = terrain.pattern;
-      var symbolId = GetTerrainTileShapeSymbol(patternTile);
 
       var initialTileDescription =
-          new TileDescription(
-              terrain.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier, // elevation
-              patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-              terrainTile.elevation, // depth
+          new InitialTile(
+              location,
+              terrainTile.elevation,
               CalculateTintedFrontColor(membersFrontColors[membersFrontColors.Count - 1].Item2, selected, highlighted),
               membersSideColors[membersSideColors.Count - 1].Item2,
-              // new ExtrudedSymbolDescription(
-              //     RenderPriority.TILE,
-              //     new SymbolDescription(
-              //         symbolId, // symbol id
-              //         ,
-              //         patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-              //         1, // scale
-              //         OutlineMode.WithOutline,
-              //         Vector4Animation.Color(0, 0, 0)), // outline
-              //     true,
-              //     ),
               CalculateMaybeOverlay(membersOverlays),
               CalculateMaybeFeature(membersFeatures),
               membersItems);
@@ -126,36 +93,15 @@ namespace Geomancer {
       //   var degrees = (float)(radians * 180f / Math.PI);
       //   var rotation = Quaternion.AngleAxis(-degrees, Vector3.up);
       var unityElevationStepHeight = terrain.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier;
-      var (groundMesh, outlinesMesh) = tileShapeMeshCache.Get(shapeIndex, unityElevationStepHeight, .025f);
-      
-      
-      tileView = TileView.Create(loader, groundMesh, outlinesMesh, clock, timer, initialTileDescription);
-      tileView.gameObject.AddComponent<TerrainTilePresenterTile>().Init(this);
-      tileView.gameObject.transform.localPosition = position;
+
+
+      tileViewId = domino.CreateTile(initialTileDescription);
+          
     }
 
-    private SymbolId GetTerrainTileShapeSymbol(PatternTile patternTile) {
-      switch (terrain.pattern.name) {
-        case "square":
-          if (patternTile.shapeIndex == 0) {
-            return new SymbolId("AthSymbols", 0x006A);
-          }
-          break;
-        case "pentagon9":
-          if (patternTile.shapeIndex == 0) {
-            return new SymbolId("AthSymbols", 0x0069);
-          } else if (patternTile.shapeIndex == 1) {
-            return new SymbolId("AthSymbols", 0x0068);
-          }
-          break;
-        case "hex":
-          if (patternTile.shapeIndex == 0) {
-            return new SymbolId("AthSymbols", 0x0035);
-          }
-          break;
-      }
-      return new SymbolId("AthSymbols", 0x0065);
-    }
+    // private InitialTile MakeInitialTile() {
+    //   
+    // }
 
     private static Vector3 CalculatePosition(int elevationStepHeight, Pattern pattern, Location location, int elevation) {
       var positionVec2 = pattern.GetTileCenter(location);
@@ -173,37 +119,39 @@ namespace Geomancer {
     }
 
     private void RefreshFrontColor() {
-      tileView.SetFrontColor(
+      domino.SetFrontColor(
+          tileViewId, 
           CalculateTintedFrontColor(
               membersFrontColors[membersFrontColors.Count - 1].Item2, selected, highlighted));
     }
 
     private void RefreshSideColor() {
-      tileView.SetSidesColor(membersSideColors[membersSideColors.Count - 1].Item2);
+      domino.SetSidesColor(tileViewId, membersSideColors[membersSideColors.Count - 1].Item2);
     }
     
     private void RefreshFeature() {
-      tileView.SetFeature(membersFeatures.Count == 0 ? null : membersFeatures[membersFeatures.Count - 1].Item2);
+      domino.SetFeature(tileViewId, membersFeatures.Count == 0 ? null : membersFeatures[membersFeatures.Count - 1].Item2);
     }
     
     private void RefreshUnit() {
-      if (this.unitView != null) {
-        this.unitView.Destruct();
-        this.unitView = null;
+      if (this.unitViewId != 0) {
+        domino.DestroyUnit(this.unitViewId);
+        this.unitViewId = 0;
       }
-      if (this.unitView == null && membersDominos.Count > 0 && membersUnitFaces.Count > 0) {
+      if (this.unitViewId == 0 && membersUnitFaces.Count > 0) {
+        var defaultColor = Vector4Animation.Color(.4f, .4f, 0, 1);
+        var defaultShape = DominoShape.TALL_DOMINO;
+        
         var position = CalculatePosition(terrain.elevationStepHeight, terrain.pattern, location, terrainTile.elevation);
-        var unitDescription =
-            new UnitDescription(
-                null,
-                membersDominos[membersDominos.Count - 1].Item2,
+        var initialUnit =
+            new InitialUnit(
+                membersDominoShapes.Count > 0 ? membersDominoShapes[membersDominoShapes.Count - 1].Item2 : defaultShape,
+                membersDominoColors.Count > 0 ? membersDominoColors[membersDominoColors.Count - 1].Item2 : defaultColor,
                 membersUnitFaces[membersUnitFaces.Count - 1].Item2,
                 membersDetails,
                 1,
                 1);
-        Asserts.Assert(false);
-        // this.unitView =
-        //     loader.CreateUnitView(clock, null, position, unitDescription, new Vector3(0, -8, 16));
+        this.unitViewId = domino.CreateUnit(initialUnit);
       }
     }
 
@@ -218,22 +166,14 @@ namespace Geomancer {
     }
 
     private void RefreshOverlay() {
-      tileView.SetOverlay(membersOverlays.Count == 0 ? null : membersOverlays[membersOverlays.Count - 1].Item2);
+      domino.SetOverlay(
+          tileViewId, membersOverlays.Count == 0 ? null : membersOverlays[membersOverlays.Count - 1].Item2);
     }
-
-    private void RefreshPosition() {
-      var position = CalculatePosition(terrain.elevationStepHeight, terrain.pattern, location, terrainTile.elevation);
-      tileView.gameObject.transform.localPosition = position;
-    }
-
-    private void RefreshDepth() {
-      tileView.SetDepth(terrainTile.elevation);
-    }
-
+    
     private void RefreshItems() {
-      tileView.ClearItems();
+      domino.ClearItems(tileViewId);
       foreach (var x in membersItems) {
-        tileView.AddItem(x.Item1, x.Item2);
+        domino.AddItem(tileViewId, x.Item1, x.Item2);
       }
     }
 
@@ -253,48 +193,55 @@ namespace Geomancer {
       foreach (var thing in vivimap.getEntries(member)) {
         if (thing is MemberToViewMapper.TopColorDescriptionForIDescription topColor) {
           membersFrontColors.Add((memberId, topColor.color));
-          if (tileView != null) {
+          if (tileViewId != 0) {
             RefreshFrontColor();
           }
         } else if (thing is MemberToViewMapper.SideColorDescriptionForIDescription sideColor) {
           membersSideColors.Add((memberId, sideColor.color));
-          if (tileView != null) {
+          if (tileViewId != 0) {
             RefreshSideColor();
           }
         } else if (thing is MemberToViewMapper.OverlayDescriptionForIDescription overlay) {
           membersOverlays.Add((memberId, overlay.symbol));
-          if (tileView != null) {
+          if (tileViewId != 0) {
             RefreshOverlay();
           }
         } else if (thing is MemberToViewMapper.FeatureDescriptionForIDescription feature) {
           membersFeatures.Add((memberId, feature.symbol));
-          if (tileView != null) {
+          if (tileViewId != 0) {
             RefreshFeature();
           }
-        } else if (thing is MemberToViewMapper.DominoDescriptionForIDescription domino) {
-          membersDominos.Add((memberId, domino.domino));
-          if (unitView != null) {
+        } else if (thing is MemberToViewMapper.DominoColorDescriptionForIDescription dominoColor) {
+          membersDominoColors.Add((memberId, dominoColor.color));
+          if (unitViewId != 0) {
+            RefreshUnit();
+          } else {
+            RefreshDomino();
+          }
+        } else if (thing is MemberToViewMapper.DominoShapeDescriptionForIDescription dominoShape) {
+          membersDominoShapes.Add((memberId, dominoShape.shape));
+          if (unitViewId != 0) {
             RefreshUnit();
           } else {
             RefreshDomino();
           }
         } else if (thing is MemberToViewMapper.FaceDescriptionForIDescription face) {
           membersUnitFaces.Add((memberId, face.symbol));
-          if (unitView == null) {
+          if (unitViewId == 0) {
             RefreshUnit();
           } else {
             RefreshUnitFace();
           }
         } else if (thing is MemberToViewMapper.DetailDescriptionForIDescription detail) {
           membersDetails.Add((memberId, detail.symbol));
-          if (unitView == null) {
+          if (unitViewId == 0) {
             RefreshUnit();
           } else {
             RefreshDetails();
           }
         } else if (thing is MemberToViewMapper.ItemDescriptionForIDescription item) {
           membersItems.Add((memberId, item.symbol));
-          if (tileView != null) {
+          if (tileViewId != 0) {
             RefreshItems();
           }
         } else {
@@ -309,42 +256,47 @@ namespace Geomancer {
       foreach (var thing in vivimap.getEntries(member)) {
         if (thing is MemberToViewMapper.TopColorDescriptionForIDescription topColor) {
           membersFrontColors.RemoveAll(x => x.Item1 == memberId);
-          if (tileView != null) {
+          if (tileViewId != 0) {
             RefreshFrontColor();
           }
         } else if (thing is MemberToViewMapper.SideColorDescriptionForIDescription sideColor) {
           membersSideColors.RemoveAll(x => x.Item1 == memberId);
-          if (tileView != null) {
+          if (tileViewId != 0) {
             RefreshSideColor();
           }
         } else if (thing is MemberToViewMapper.OverlayDescriptionForIDescription overlay) {
           membersOverlays.RemoveAll(x => x.Item1 == memberId);
-          if (tileView != null) {
+          if (tileViewId != 0) {
             RefreshOverlay();
           }
         } else if (thing is MemberToViewMapper.FeatureDescriptionForIDescription feature) {
           membersFeatures.RemoveAll(x => x.Item1 == memberId);
-          if (tileView != null) {
+          if (tileViewId != 0) {
             RefreshFeature();
           }
-        } else if (thing is MemberToViewMapper.DominoDescriptionForIDescription domino) {
-          membersDominos.RemoveAll(x => x.Item1 == memberId);
-          if (unitView != null) {
+        } else if (thing is MemberToViewMapper.DominoShapeDescriptionForIDescription dominoShape) {
+          membersDominoShapes.RemoveAll(x => x.Item1 == memberId);
+          if (unitViewId != 0) {
+            RefreshDomino();
+          }
+        } else if (thing is MemberToViewMapper.DominoColorDescriptionForIDescription dominoColor) {
+          membersDominoColors.RemoveAll(x => x.Item1 == memberId);
+          if (unitViewId != 0) {
             RefreshDomino();
           }
         } else if (thing is MemberToViewMapper.FaceDescriptionForIDescription face) {
           membersUnitFaces.RemoveAll(x => x.Item1 == memberId);
-          if (unitView != null) {
+          if (unitViewId != 0) {
             RefreshUnitFace();
           }
         } else if (thing is MemberToViewMapper.DetailDescriptionForIDescription detail) {
           membersDetails.RemoveAll(x => x.Item1 == memberId);
-          if (unitView != null) {
+          if (unitViewId != 0) {
             RefreshDetails();
           }
         } else if (thing is MemberToViewMapper.ItemDescriptionForIDescription item) {
           membersItems.RemoveAll(x => x.Item1 == memberId);
-          if (tileView != null) {
+          if (tileViewId != 0) {
             RefreshItems();
           }
         } else {
@@ -372,8 +324,7 @@ namespace Geomancer {
 
     public void SetElevation(int elevation) {
       terrainTile.elevation = elevation;
-      RefreshPosition();
-      RefreshDepth();
+      domino.SetElevation(tileViewId, elevation);
     }
 
     //   if (unitView) {
@@ -392,13 +343,13 @@ namespace Geomancer {
     //     new UnitDescription(
     //       null,
     //       new DominoDescription(false, Vector4Animation.Color(.5f, 0, .5f)),
-    //       new ExtrudedSymbolDescription(
+    //       new InitialSymbol(
     //         RenderPriority.DOMINO,
     //         new SymbolDescription(
     //           "a", Vector4Animation.Color(0, 1, 0), 45, 1, OutlineMode.WithBackOutline),
     //         true,
     //         Vector4Animation.Color(0, 0, 0)),
-    //       new List<(int, ExtrudedSymbolDescription)>(),
+    //       new List<(int, InitialSymbol)>(),
     //       1,
     //       1);
     //
@@ -408,14 +359,14 @@ namespace Geomancer {
     // }
 
     public void DestroyTerrainTilePresenter() {
-      tileView.DestroyTile();
+      domino.DestroyTile(tileViewId);
     }
 
-    private static ExtrudedSymbolDescription CalculateMaybeOverlay(List<(ulong, ExtrudedSymbolDescription)> membersOverlays) {
+    private static InitialSymbol CalculateMaybeOverlay(List<(ulong, InitialSymbol)> membersOverlays) {
       return membersOverlays.Count == 0 ? null : membersOverlays[membersOverlays.Count - 1].Item2;
     }
 
-    private static ExtrudedSymbolDescription CalculateMaybeFeature(List<(ulong, ExtrudedSymbolDescription)> membersFeatures) {
+    private static InitialSymbol CalculateMaybeFeature(List<(ulong, InitialSymbol)> membersFeatures) {
       return membersFeatures.Count == 0 ? null : membersFeatures[membersFeatures.Count - 1].Item2;
     }
 

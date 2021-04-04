@@ -5,6 +5,11 @@ using Domino;
 using UnityEngine;
 
 namespace Domino {
+  public enum DominoShape {
+    SMALL_SQUARE = 1,
+    TALL_DOMINO = 2,
+  }
+  
   public class DominoDescription {
     public readonly bool large;
     public readonly Vector4Animation color;

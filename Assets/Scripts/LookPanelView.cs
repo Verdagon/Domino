@@ -6,10 +6,11 @@ using Domino;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AthPlayer {
+namespace Geomancer {
   public class LookPanelView {
-    OverlayPaneler overlayPaneler;
-    OverlayPanelView visibleOverlayPanelView;
+    GameToDominoConnection domino;
+    private int screenGW;
+    ulong visibleOverlayPanelView;
     // In AthPlayer, the status view is below, so our LookPanelView is at 2 Y.
     // In Editor, our LookPanelView is at the bottom, so has 0 Y.
     int panelGYInScreen;
@@ -17,8 +18,9 @@ namespace AthPlayer {
     // In Editor, the status view is at the bottom of the screen, so needs 1 bottom padding.
     int bottomPadding;
 
-    public LookPanelView(OverlayPaneler overlayPaneler, int panelGYInScreen, int bottomPadding) {
-      this.overlayPaneler = overlayPaneler;
+    public LookPanelView(GameToDominoConnection domino, int screenGW, int panelGYInScreen, int bottomPadding) {
+      this.domino = domino;
+      this.screenGW = screenGW;
       this.panelGYInScreen = panelGYInScreen;
       this.bottomPadding = bottomPadding;
     }
@@ -27,9 +29,9 @@ namespace AthPlayer {
       SetStuff(true, message, "", new List<KeyValuePair<SymbolDescription, string>>());
     }
     public void ClearMessage() {
-      if (visibleOverlayPanelView != null) {
-        visibleOverlayPanelView.ScheduleClose(0);
-        visibleOverlayPanelView = null;
+      if (visibleOverlayPanelView != 0) {
+        domino.ScheduleClose(visibleOverlayPanelView, 0);
+        visibleOverlayPanelView = 0;
       }
     }
     public void SetStuff(
@@ -50,12 +52,13 @@ namespace AthPlayer {
 
       int panelGXInScreen = 0;
       visibleOverlayPanelView =
-        overlayPaneler.MakePanel(panelGXInScreen, panelGYInScreen, overlayPaneler.screenGW, panelGH);
-      visibleOverlayPanelView.AddRectangle(
+        domino.MakePanel(panelGXInScreen, panelGYInScreen, screenGW, panelGH);
+      domino.AddRectangle(
+        visibleOverlayPanelView,
         0,
         -1,
         0,
-        1 + overlayPaneler.screenGW + 1,
+        1 + screenGW + 1,
         panelGH,
         1,
         new UnityEngine.Color(0, 0, 0, .85f), new UnityEngine.Color(0, 0, 0, 0));
@@ -63,15 +66,15 @@ namespace AthPlayer {
       int buttonsWidth = 3;
 
       if (status.Length == 0 && symbolsAndLabels.Count == 0) {
-        var lines = LineWrapper.Wrap(message, overlayPaneler.screenGW - 2 - buttonsWidth);
+        var lines = LineWrapper.Wrap(message, screenGW - 2 - buttonsWidth);
         for (int i = 0; i < lines.Length; i++) {
-          visibleOverlayPanelView.AddString(0, 1, contentYStart + 2 - i, overlayPaneler.screenGW - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, lines[i]);
+          domino.AddString(visibleOverlayPanelView, 0, 1, contentYStart + 2 - i, screenGW - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, lines[i]);
         }
       } else {
-        visibleOverlayPanelView.AddString(0, 1, contentYStart + 2, overlayPaneler.screenGW - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, message);
-        visibleOverlayPanelView.AddString(0, overlayPaneler.screenGW - buttonsWidth - 1 - status.Length, contentYStart + 2, overlayPaneler.screenGW - 20 - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, status);
-        visibleOverlayPanelView.SetFadeIn(0, new OverlayPanelView.FadeIn(0, 100));
-        visibleOverlayPanelView.SetFadeOut(0, new OverlayPanelView.FadeOut(-200, 0));
+        domino.AddString(visibleOverlayPanelView, 0, 1, contentYStart + 2, screenGW - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, message);
+        domino.AddString(visibleOverlayPanelView, 0, screenGW - buttonsWidth - 1 - status.Length, contentYStart + 2, screenGW - 20 - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, status);
+        domino.SetFadeIn(visibleOverlayPanelView, new OverlayPanelView.FadeIn(0, 100));
+        domino.SetFadeOut(visibleOverlayPanelView, new OverlayPanelView.FadeOut(-200, 0));
 
         int x = 0;
         foreach (var symbolAndLabel in symbolsAndLabels) {
@@ -82,7 +85,7 @@ namespace AthPlayer {
           //visibleOverlayPanelView.AddSymbol(0, x, contentYStart, 1f, 1, symbol.frontColor.Get(long.MaxValue), symbol.symbolId, false);
           x += 2; // Symbol takes up a lot of space
 
-          visibleOverlayPanelView.AddString(0, x, contentYStart, 20, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, label);
+          domino.AddString(visibleOverlayPanelView, 0, x, contentYStart, 20, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, label);
           x += label.Length;
 
           x += 1; // Right margin

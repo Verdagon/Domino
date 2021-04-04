@@ -8,7 +8,10 @@ namespace Domino {
     METER = 2,
 
     // Transparent things (try to keep em ordered back to front)
-    SYMBOL = 3,
-    RUNE = 3,
+    OVERLAY = 3,
+    ITEM = 3,
+    FEATURE = 4,
+    SYMBOL = 5,
+    RUNE = 6,
   }
 }

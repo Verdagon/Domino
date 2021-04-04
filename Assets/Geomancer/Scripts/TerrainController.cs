@@ -14,27 +14,30 @@ namespace Geomancer {
     public OnTerrainTileClicked TerrainTileClicked;
     public OnPhantomTileClicked PhantomTileClicked;
 
-    IClock clock;
-    ITimer timer;
+    private GameToDominoConnection domino;
+    // IClock clock;
+    // ITimer timer;
     MemberToViewMapper vivimap;
     public readonly Geomancer.Model.Terrain terrain;
-    ILoader loader;
-    private TileShapeMeshCache tileShapeMeshCache;
+    // ILoader loader;
+    // private TileShapeMeshCache tileShapeMeshCache;
     Dictionary<Location, TerrainTilePresenter> tilePresenters = new Dictionary<Location, TerrainTilePresenter>();
     Dictionary<Location, PhantomTilePresenter> phantomTilePresenters = new Dictionary<Location, PhantomTilePresenter>();
 
     Location maybeMouseHighlightedLocation = null;
     private SortedSet<Location> highlightedLocations = new SortedSet<Location>();
 
-    public TerrainPresenter(IClock clock,
-      ITimer timer, MemberToViewMapper vivimap, Geomancer.Model.Terrain terrain, ILoader loader,
-      TileShapeMeshCache tileShapeMeshCache) {
-      this.clock = clock;
-      this.timer = timer;
+    public TerrainPresenter(
+        GameToDominoConnection domino,
+        MemberToViewMapper vivimap,
+        Geomancer.Model.Terrain terrain) {
+      this.domino = domino;
+      // this.clock = clock;
+      // this.timer = timer;
       this.vivimap = vivimap;
       this.terrain = terrain;
-      this.loader = loader;
-      this.tileShapeMeshCache = tileShapeMeshCache;
+      // this.loader = loader;
+      // this.tileShapeMeshCache = tileShapeMeshCache;
 
       foreach (var locationAndTile in terrain.tiles) {
         addTerrainTile(locationAndTile.Key, locationAndTile.Value);
@@ -55,28 +58,6 @@ namespace Geomancer {
       }
     }
 
-    public void UpdateMouse(UnityEngine.Ray ray) {
-      Location oldLocation = maybeMouseHighlightedLocation;
-      var location = LocationUnderMouse(ray);
-      if (location != maybeMouseHighlightedLocation) {
-        maybeMouseHighlightedLocation = location;
-        UpdateLocationHighlighted(oldLocation);
-        UpdateLocationHighlighted(location);
-        TerrainTileHovered?.Invoke(maybeMouseHighlightedLocation);
-      }
-
-      if (Input.GetMouseButtonDown(0)) {
-        if (maybeMouseHighlightedLocation != null) {
-          if (tilePresenters.TryGetValue(maybeMouseHighlightedLocation, out var newMousedTerrainTilePresenter)) {
-            TerrainTileClicked?.Invoke(maybeMouseHighlightedLocation);
-          }
-          if (phantomTilePresenters.TryGetValue(maybeMouseHighlightedLocation, out var newMousedPhantomTilePresenter)) {
-            PhantomTileClicked?.Invoke(maybeMouseHighlightedLocation);
-          }
-        }
-      }
-    }
-
     private void UpdateLocationHighlighted(Location location) {
       bool highlighted = location == maybeMouseHighlightedLocation;
       bool selected = highlightedLocations.Contains(location);
@@ -92,24 +73,6 @@ namespace Geomancer {
       }
     }
 
-    private Location LocationUnderMouse(UnityEngine.Ray ray) {
-      RaycastHit hit;
-      if (Physics.Raycast(ray, out hit)) {
-        if (hit.collider != null) {
-          var gameObject = hit.collider.gameObject;
-          var mousedPhantomTilePresenterTile = gameObject.GetComponentInParent<PhantomTilePresenterTile>();
-          if (mousedPhantomTilePresenterTile) {
-            return mousedPhantomTilePresenterTile.presenter.location;
-          }
-          var mousedTerrainTilePresenterTile = gameObject.GetComponentInParent<TerrainTilePresenterTile>();
-          if (mousedTerrainTilePresenterTile) {
-            return mousedTerrainTilePresenterTile.presenter.location;
-          }
-        }
-      }
-      return null;
-    }
-    
     public void AddTile(TerrainTile tile) {
       if (phantomTilePresenters.TryGetValue(tile.location, out var presenter)) {
         presenter.DestroyPhantomTilePresenter();
@@ -159,12 +122,12 @@ namespace Geomancer {
     }
 
     private void addTerrainTile(Location location, TerrainTile tile) {
-      var presenter = new TerrainTilePresenter(clock, timer, vivimap, terrain, location, tile, loader, tileShapeMeshCache);
+      var presenter = new TerrainTilePresenter(domino, vivimap, terrain, location, tile);
       tilePresenters.Add(location, presenter);
     }
 
     private void addPhantomTile(Location location) {
-      var presenter = new PhantomTilePresenter(clock, timer, terrain.pattern, location, loader, tileShapeMeshCache, terrain.elevationStepHeight);
+      var presenter = new PhantomTilePresenter(domino, terrain.pattern, location, terrain.elevationStepHeight);
       phantomTilePresenters.Add(location, presenter);
     }
 

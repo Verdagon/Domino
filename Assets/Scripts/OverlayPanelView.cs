@@ -176,6 +176,7 @@ namespace Domino {
         SymbolId symbol) {
       return AddSymbol(parentId, x, y, size, z, color, symbol, false);
     }
+    
     public int AddSymbol(
         int parentId,
         float x,
@@ -240,7 +241,7 @@ namespace Domino {
       return AddRectangleUnityCoords(parentId, unityX, unityY, unityWidth, unityHeight, z, color, borderColor);
     }
 
-    public int AddRectangleUnityCoords(
+    private int AddRectangleUnityCoords(
         int parentId,
         float unityX,
         float unityY,

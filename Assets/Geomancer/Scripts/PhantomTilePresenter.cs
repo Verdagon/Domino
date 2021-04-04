@@ -22,33 +22,32 @@ namespace Geomancer {
     //public delegate void OnMouseOutEvent();
     public delegate void OnPhantomTileClickedEvent();
 
-    IClock clock;
-    ITimer timer;
+    // IClock clock;
+    // ITimer timer;
   Pattern pattern;
     public readonly Location location;
-    ILoader loader;
-    private TileShapeMeshCache tileShapeMeshCache;
+    // ILoader loader;
+    // private TileShapeMeshCache tileShapeMeshCache;
 
-    private int elevationStepHeight;
+    private float elevationStepHeight;
     
     Vector3 tileCenter;
     TileView tileView;
     private bool highlighted;
+    private GameToDominoConnection domino;
 
     public PhantomTilePresenter(
-        IClock clock,
-      ITimer timer,
+        GameToDominoConnection domino,
         Pattern pattern,
         Location location,
-        ILoader loader,
-        TileShapeMeshCache tileShapeMeshCache,
-        int elevationStepHeight) {
-      this.clock = clock;
-      this.timer = timer;
+        float elevationStepHeight) {
+      this.domino = domino;
+      // this.clock = clock;
+      // this.timer = timer;
       this.pattern = pattern;
       this.location = location;
-      this.loader = loader;
-      this.tileShapeMeshCache = tileShapeMeshCache;
+      // this.loader = loader;
+      // this.tileShapeMeshCache = tileShapeMeshCache;
       this.elevationStepHeight = elevationStepHeight;
 
       var positionVec2 = pattern.GetTileCenter(location);
@@ -77,7 +76,7 @@ namespace Geomancer {
         tileView = null;
       }
 
-      var position = CalculatePosition(elevationStepHeight, pattern, location, 1);
+      var position = CalculatePosition(elevationStepHeight, pattern, location);
 
       var patternTileIndex = location.indexInGroup;
       var shapeIndex = pattern.patternTiles[patternTileIndex].shapeIndex;
@@ -86,20 +85,22 @@ namespace Geomancer {
       //   var degrees = (float)(radians * 180f / Math.PI);
       //   var rotation = Quaternion.AngleAxis(-degrees, Vector3.up);
       var unityElevationStepHeight = elevationStepHeight * ModelExtensions.ModelToUnityMultiplier;
-      var (groundMesh, outlinesMesh) = tileShapeMeshCache.Get(shapeIndex, unityElevationStepHeight, .025f);
-
-
       var tileDescription = GetTileDescription(pattern, location, elevationStepHeight, highlighted);
-      tileView = TileView.Create(loader, groundMesh, outlinesMesh, clock, timer, tileDescription);
-      tileView.gameObject.AddComponent<PhantomTilePresenterTile>().Init(this);
+
+      domino.CreateTile(tileDescription);
       
-      tileView.gameObject.transform.localPosition = position;
+      // var (groundMesh, outlinesMesh) = tileShapeMeshCache.Get(shapeIndex, unityElevationStepHeight, .025f);
+      // tileView = TileView.Create(loader, groundMesh, outlinesMesh, clock, timer, tileDescription);
+      // tileView.gameObject.AddComponent<PhantomTilePresenterTile>().Init(this);
+      // tileView.gameObject.transform.localPosition = position;
     }
     
-    private static Vector3 CalculatePosition(int elevationStepHeight, Pattern pattern, Location location, int elevation) {
+    private static Vector3 CalculatePosition(float elevationStepHeight, Pattern pattern, Location location) {
       var positionVec2 = pattern.GetTileCenter(location);
-      var positionVec3 = new Vec3(positionVec2.x, positionVec2.y, elevation * elevationStepHeight);
-      return positionVec3.ToUnity();
+      var positionVec3 = new Vec3(positionVec2.x, positionVec2.y, 0);
+      var unityPos = positionVec3.ToUnity();
+      unityPos.y = 1 * elevationStepHeight;
+      return unityPos;
     }
     
     //
@@ -126,34 +127,21 @@ namespace Geomancer {
     //   return new SymbolId("AthSymbols", 0x0065);
     // }
     //
-    private static TileDescription GetTileDescription(
+    private static InitialTile GetTileDescription(
         Pattern pattern, Location location, float elevationStepHeight, bool highlighted) {
       var patternTile = pattern.patternTiles[location.indexInGroup];
     
       var frontColor = highlighted ? Vector4Animation.Color(.1f, .1f, .1f) : Vector4Animation.Color(0f, 0, 0f);
       var sideColor = highlighted ? Vector4Animation.Color(.1f, .1f, .1f) : Vector4Animation.Color(0f, 0, 0f);
     
-      return
-        new TileDescription(
-              elevationStepHeight,
-              patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-              1,
-              frontColor,
-              sideColor,
-              // new ExtrudedSymbolDescription(
-              //   RenderPriority.TILE,
-              //   new SymbolDescription(
-              //       symbolName,
-              //       frontColor,
-              //       patternTile.rotateRadianards / 1000f * 180f / (float)Math.PI,
-              //       1,
-              //       OutlineMode.WithOutline,
-              //       Vector4Animation.Color(.2f, .2f, .2f)),
-              //   false,
-              //   sideColor),
-              null,
-              null,
-              new List<(ulong, ExtrudedSymbolDescription)>());
+      return new InitialTile(
+          location,
+          1,
+          frontColor,
+          sideColor,
+          null,
+          null,
+          new List<(ulong, InitialSymbol)>());
     }
 
     public void DestroyPhantomTilePresenter() {

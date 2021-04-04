@@ -5,7 +5,7 @@ using Domino;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AthPlayer {
+namespace Geomancer {
   public class ListView {
     public class Entry {
       public SymbolId symbol;
@@ -17,25 +17,32 @@ namespace AthPlayer {
       }
     }
 
+    private GameToDominoConnection domino;
+    private ulong viewId;
+    private readonly int viewGW, viewGH;
+
     //IClock cinematicTimer;
     //OverlayPaneler overlayPaneler;
-    OverlayPanelView view;
+    // OverlayPanelView view;
 
-    public ListView(OverlayPanelView view) {
+    public ListView(GameToDominoConnection domino, ulong viewId, int viewGW, int viewGH) {//OverlayPanelView view) {
+      this.domino = domino;
+      this.viewGW = viewGW;
+      this.viewGH = viewGH;
       //this.cinematicTimer = cinematicTimer;
       //this.overlayPaneler = overlayPaneler;
 
-      this.view = view;
+      this.viewId = viewId;
     }
 
     public void ShowEntries(List<Entry> entries) {
-      view.Remove(0);
+      domino.Remove(viewId, 0);
       if (entries.Count > 0) {
-        view.AddBackground(new UnityEngine.Color(0, 0, 0, .9f), new UnityEngine.Color(0, 0, 0, 0));
+        domino.AddBackground(viewId, new UnityEngine.Color(0, 0, 0, .9f), new UnityEngine.Color(0, 0, 0, 0));
 
         for (int i = 0; i < entries.Count; i++) {
           // view.AddSymbol(0, 1, view.symbolsHigh - (i * 2 + 2), 2.0f, 0, new UnityEngine.Color(1, 1, 1), entries[i].symbol);
-          view.AddString(0, 5, view.symbolsHigh - (i * 2 + 2 - 0.5f), view.symbolsWide - 3, new UnityEngine.Color(1, 1, 1), Fonts.PROSE_OVERLAY_FONT, entries[i].text);
+          domino.AddString(viewId, 0, 5, viewGH - (i * 2 + 2 - 0.5f), viewGW - 3, new UnityEngine.Color(1, 1, 1), Fonts.PROSE_OVERLAY_FONT, entries[i].text);
         }
       }
     }

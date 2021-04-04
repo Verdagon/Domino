@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Geomancer.Model;
 using UnityEngine;
 using Virtence.VText;
 
@@ -18,6 +19,7 @@ namespace Domino {
 
     public TileDescription(
         float elevationStepHeight,
+        // float elevationStepHeight,
         float tileRotationDegrees,
         int depth,
         IVector4Animation topColor,
