@@ -52,7 +52,7 @@ namespace Geomancer.Model {
           terrainTile.elevation * elevationStepHeight);
     }
 
-    public int GetElevationDifference( Location locA, Location locB) {
+    public int GetElevationDifference(Location locA, Location locB) {
       return Math.Abs(
           tiles[locA].elevation -
           tiles[locB].elevation);

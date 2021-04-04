@@ -39,9 +39,10 @@ namespace Geomancer {
     private Terrain terrain;
     private LookPanelView lookPanelView;
     private Dictionary<char, string> memberByKeyCode;
-    TerrainPresenter terrainPresenter;
+    TerrainController terrainPresenter;
     private SortedSet<Location> selectedLocations = new SortedSet<Location>();
     private ListView membersView;
+    private Location maybeHoveredLocation;
     private Location maybeLookedLocation;
     private MemberToViewMapper vivimap;
 
@@ -102,16 +103,27 @@ namespace Geomancer {
       
       var cameraLookAtPosition = terrain.GetTileCenter(startLocation);
       
-      domino.SetupGame(cameraLookAtPosition, elevationStepHeight * ModelExtensions.ModelToUnityMultiplier);
+      domino.SetupGame(cameraLookAtPosition, elevationStepHeight * ModelExtensions.ModelToUnityMultiplier, pattern);
 
       membersView = new ListView(domino, domino.MakePanel(0, 0, 40, 16), 40, 16);
       lookPanelView = new LookPanelView(domino, screenGW, -1, 2);
 
       vivimap = MemberToViewMapper.LoadMap("vivimap.txt");
-      terrainPresenter = new TerrainPresenter(domino, vivimap, terrain);
-      terrainPresenter.PhantomTileClicked += HandlePhantomTileClicked;
-      terrainPresenter.TerrainTileClicked += HandleTerrainTileClicked;
-      terrainPresenter.TerrainTileHovered += HandleTerrainTileHovered;
+      terrainPresenter = new TerrainController(domino, vivimap, terrain);
+    }
+
+    public void SetHoveredLocation(ulong tileViewId, Location newMaybeHoveredLocation) {
+      HandleTerrainTileHovered(newMaybeHoveredLocation);
+      terrainPresenter.SetHoveredLocation(newMaybeHoveredLocation);
+    }
+    
+    //
+    // public void LocationMouseOut(ulong tileViewId, Location location) {
+    //   HandleTerrainTileHovered(null);
+    // }
+    
+    public void LocationMouseDown(ulong tileViewId, Location location) {
+      
     }
 
     public void KeyDown(int c, bool leftShiftDown, bool rightShiftDown, bool ctrlDown, bool leftAltDown, bool rightAltDown) {

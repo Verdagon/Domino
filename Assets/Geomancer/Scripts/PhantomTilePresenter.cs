@@ -32,7 +32,7 @@ namespace Geomancer {
     private float elevationStepHeight;
     
     Vector3 tileCenter;
-    TileView tileView;
+    ulong tileViewId;
     private bool highlighted;
     private GameToDominoConnection domino;
 
@@ -65,15 +65,16 @@ namespace Geomancer {
     
     public void SetHighlighted(bool highlighted) {
       var (frontColor, sideColor) = GetColors(highlighted);
-      tileView.SetFrontColor(frontColor);
-      tileView.SetSidesColor(sideColor);
+      domino.SetSurfaceColor(tileViewId, frontColor);
+      domino.SetCliffColor(tileViewId, sideColor);
       // tileView.SetDescription(GetTileDescription(pattern, location, highlighted));
     }
 
     private void ResetViews() {
-      if (tileView != null) {
-        tileView.DestroyTile();
-        tileView = null;
+      if (tileViewId != 0) {
+        domino.DestroyTile(tileViewId);
+        // tileView.DestroyTile();
+        tileViewId = 0;
       }
 
       var position = CalculatePosition(elevationStepHeight, pattern, location);
@@ -87,7 +88,7 @@ namespace Geomancer {
       var unityElevationStepHeight = elevationStepHeight * ModelExtensions.ModelToUnityMultiplier;
       var tileDescription = GetTileDescription(pattern, location, elevationStepHeight, highlighted);
 
-      domino.CreateTile(tileDescription);
+      tileViewId = domino.CreateTile(tileDescription);
       
       // var (groundMesh, outlinesMesh) = tileShapeMeshCache.Get(shapeIndex, unityElevationStepHeight, .025f);
       // tileView = TileView.Create(loader, groundMesh, outlinesMesh, clock, timer, tileDescription);
@@ -145,7 +146,8 @@ namespace Geomancer {
     }
 
     public void DestroyPhantomTilePresenter() {
-      tileView.DestroyTile();
+      domino.DestroyTile(tileViewId);// tileView.DestroyTile();
+      tileViewId = 0;
     }
 
     // public void OnStrMutListEffect(IStrMutListEffect effect) {

@@ -39,8 +39,8 @@ namespace Domino {
       return id;
     }
 
-    public void SetupGame(Vec3 cameraPosition, float elevationStepHeight) {
-      messages.Add(new SetupGameMessage(cameraPosition, elevationStepHeight));
+    public void SetupGame(Vec3 cameraPosition, float elevationStepHeight, Pattern pattern) {
+      messages.Add(new SetupGameMessage(cameraPosition, elevationStepHeight, pattern));
     }
 
     public void ScheduleClose(ulong viewId, ulong startMsFromNow) {
@@ -161,11 +161,11 @@ namespace Domino {
     public void SetFeature(ulong tileViewId, InitialSymbol maybeFeature) {
       messages.Add(new SetFeatureMessage(tileViewId, maybeFeature));
     }
-    public void SetSidesColor(ulong tileViewId, IVector4Animation sideColor) {
-      messages.Add(new SetSidesColorMessage(tileViewId, sideColor));
+    public void SetCliffColor(ulong tileViewId, IVector4Animation sideColor) {
+      messages.Add(new SetCliffColorMessage(tileViewId, sideColor));
     }
-    public void SetFrontColor(ulong tileViewId, IVector4Animation frontColor) {
-      messages.Add(new SetFrontColorMessage(tileViewId, frontColor));
+    public void SetSurfaceColor(ulong tileViewId, IVector4Animation frontColor) {
+      messages.Add(new SetSurfaceColorMessage(tileViewId, frontColor));
     }
     public void SetElevation(ulong tileViewId, int elevation) {
       messages.Add(new SetElevationMessage(tileViewId, elevation));
@@ -201,13 +201,24 @@ namespace Domino {
       this.otherSide = new GameToDominoConnection(this);
     }
 
-    public List<IDominoMessage> Start(int screenGW, int screenGH) {
+    public void Start(int screenGW, int screenGH) {
       otherSide.server.Start(screenGW, screenGH);
-      return otherSide.TakeMessages();
     }
-
+    
     public void KeyDown(int c, bool leftShiftDown, bool rightShiftDown, bool ctrlDown, bool leftAltDown, bool rightAltDown) {
       otherSide.server.KeyDown(c, leftShiftDown, rightShiftDown, ctrlDown, leftAltDown, rightAltDown);
+    }
+    
+    public void SetHoveredLocation(ulong tileViewId, Location location) {
+      otherSide.server.SetHoveredLocation(tileViewId, location);
+    }
+    
+    public void LocationMouseDown(ulong tileViewId, Location location) {
+      otherSide.server.LocationMouseDown(tileViewId, location);
+    }
+    
+    public List<IDominoMessage> TakeMessages() {
+      return otherSide.TakeMessages();
     }
   }
 }

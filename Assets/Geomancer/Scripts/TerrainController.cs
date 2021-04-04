@@ -5,15 +5,7 @@ using UnityEngine;
 using Domino;
 
 namespace Geomancer {
-  public delegate void OnTerrainTileHovered(Location location);
-  public delegate void OnTerrainTileClicked(Location location);
-  public delegate void OnPhantomTileClicked(Location location);
-
-  public class TerrainPresenter {
-    public OnTerrainTileHovered TerrainTileHovered;
-    public OnTerrainTileClicked TerrainTileClicked;
-    public OnPhantomTileClicked PhantomTileClicked;
-
+  public class TerrainController {
     private GameToDominoConnection domino;
     // IClock clock;
     // ITimer timer;
@@ -25,9 +17,9 @@ namespace Geomancer {
     Dictionary<Location, PhantomTilePresenter> phantomTilePresenters = new Dictionary<Location, PhantomTilePresenter>();
 
     Location maybeMouseHighlightedLocation = null;
-    private SortedSet<Location> highlightedLocations = new SortedSet<Location>();
+    private SortedSet<Location> selectedLocations = new SortedSet<Location>();
 
-    public TerrainPresenter(
+    public TerrainController(
         GameToDominoConnection domino,
         MemberToViewMapper vivimap,
         Geomancer.Model.Terrain terrain) {
@@ -52,15 +44,15 @@ namespace Geomancer {
 
     public Location GetMaybeMouseHighlightLocation() { return maybeMouseHighlightedLocation; }
 
-    public void DestroyTerrainPresenter() {
+    public void DestroyTerrainController() {
       foreach (var entry in tilePresenters) {
         entry.Value.DestroyTerrainTilePresenter();
       }
     }
 
-    private void UpdateLocationHighlighted(Location location) {
+    public void UpdateLocationHighlighted(Location location) {
       bool highlighted = location == maybeMouseHighlightedLocation;
-      bool selected = highlightedLocations.Contains(location);
+      bool selected = selectedLocations.Contains(location);
       if (location != null) {
         if (tilePresenters.TryGetValue(location, out var newMousedTerrainTilePresenter)) {
           newMousedTerrainTilePresenter.SetHighlighted(highlighted);
@@ -84,7 +76,7 @@ namespace Geomancer {
     }
     public void RemoveTile(TerrainTile tile) {
       tilePresenters.Remove(tile.location);
-      var newHighlightedLocations = new SortedSet<Location>(highlightedLocations);
+      var newHighlightedLocations = new SortedSet<Location>(selectedLocations);
       newHighlightedLocations.Remove(tile.location);
       SetHighlightedLocations(newHighlightedLocations);
       RefreshPhantomTiles();
@@ -132,13 +124,22 @@ namespace Geomancer {
     }
 
     public void SetHighlightedLocations(SortedSet<Location> locations) {
-      var (addedLocations, removedLocations) = Geomancer.Model.SetUtils.Diff(highlightedLocations, locations);
-      highlightedLocations = locations;
+      var (addedLocations, removedLocations) = Geomancer.Model.SetUtils.Diff(selectedLocations, locations);
+      selectedLocations = locations;
       foreach (var addedLocation in addedLocations) {
         UpdateLocationHighlighted(addedLocation);
       }
       foreach (var removedLocation in removedLocations) {
         UpdateLocationHighlighted(removedLocation);
+      }
+    }
+
+    public void SetHoveredLocation(Location newMaybeMouseHighlightedLocation) {
+      if (newMaybeMouseHighlightedLocation != maybeMouseHighlightedLocation) {
+        var oldMaybeMouseHighlightedLocation = maybeMouseHighlightedLocation;
+        maybeMouseHighlightedLocation = newMaybeMouseHighlightedLocation;
+        UpdateLocationHighlighted(oldMaybeMouseHighlightedLocation);
+        UpdateLocationHighlighted(newMaybeMouseHighlightedLocation);
       }
     }
   }

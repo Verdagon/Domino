@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Geomancer.Model;
 using UnityEngine;
@@ -104,24 +105,23 @@ namespace Domino {
     private bool initialized = false;
     public bool alive {  get { return initialized;  } }
 
+    public ulong tileViewId { get; private set; }
+    public Location location { get; private set; }
+    
     private IClock clock;
     private ITimer timer;
 
-    // private List<SymbolView> tileSymbolViews = new List<SymbolView>();
-
-    private SymbolView overlaySymbolView;
-
-    private SymbolView featureSymbolView;
-
-    private List<(ulong, SymbolView)> itemSymbolViewByItemId = new List<(ulong, SymbolView)>();
-
     private float elevationStepHeight;
-    private IVector4Animation topColor;
-    private IVector4Animation sideColor;
+    private IVector4Animation surfaceColor;
+    private IVector4Animation cliffColor;
     private ExtrudedSymbolDescription maybeFeature;
     private ExtrudedSymbolDescription maybeOverlay;
     private SymbolId tileSymbolId;
     private float tileRotationDegrees;
+
+    private SymbolView overlaySymbolView;
+    private SymbolView featureSymbolView;
+    private List<(ulong, SymbolView)> itemSymbolViewByItemId = new List<(ulong, SymbolView)>();
 
     // private Task<Mesh> meshTask;
     
@@ -141,6 +141,8 @@ namespace Domino {
     private ILoader loader;
     
     public static TileView Create(
+        ulong tileViewId,
+        Location location,
         ILoader loader,
         Mesh groundMesh,
         Mesh outlinesMesh,
@@ -150,18 +152,22 @@ namespace Domino {
       var gameObject = loader.NewEmptyGameObject();
       var tileView = gameObject.AddComponent<TileView>();
       
-      tileView.Init(loader, clock, timer, initialDescription, groundMesh, outlinesMesh);
+      tileView.Init(tileViewId, location, loader, clock, timer, initialDescription, groundMesh, outlinesMesh);
       return tileView;
       // return (facesObject, outlinesObject);
     }
 
     public void Init(
+        ulong tileViewId,
+        Location location,
         ILoader loader,
         IClock clock,
         ITimer timer,
         TileDescription initialDescription,
         Mesh groundObject,
         Mesh outlinesObject) {
+      this.tileViewId = tileViewId;
+      this.location = location;
       this.loader = loader;
       this.groundGameObjects = new List<GameObject>();
       this.outlineGameObjects = new List<GameObject>();
@@ -180,8 +186,8 @@ namespace Domino {
       // tileScale = initialDescription.tileSymbolDescription.symbol.scale;
       // tileOutlineMode = initialDescription.tileSymbolDescription.symbol.isOutlined;
       // tileOutlineColor = initialDescription.tileSymbolDescription.symbol.outlineColor;
-      SetFrontColor(initialDescription.topColor);
-      SetSidesColor(initialDescription.sideColor);
+      SetSurfaceColor(initialDescription.topColor);
+      SetCliffColor(initialDescription.sideColor);
       // This is when the tile views are actually made
       SetDepth(initialDescription.depth);
       SetOverlay(initialDescription.maybeOverlaySymbolDescription);
@@ -312,12 +318,12 @@ namespace Domino {
       }
     }
     
-    public void SetFrontColor(IVector4Animation frontColor) {
-      this.topColor = frontColor;
-      RefreshFrontColor();
+    public void SetSurfaceColor(IVector4Animation frontColor) {
+      this.surfaceColor = frontColor;
+      RefreshSurfaceColor();
     }
 
-    private void RefreshFrontColor() {
+    private void RefreshSurfaceColor() {
       var animator = Vec4Animator.MakeOrGetFrom(
           clock, gameObject, (vec4) => {
             foreach (var groundGameObject in groundGameObjects) {
@@ -326,11 +332,11 @@ namespace Domino {
               groundGameObject.GetComponent<MeshRenderer>().SetPropertyBlock(props);
             }
           });
-      animator.Set(topColor, RenderPriority.TILE);
+      animator.Set(surfaceColor, RenderPriority.TILE);
     }
 
-    public void SetSidesColor(IVector4Animation sideColor) {
-      this.sideColor = sideColor;
+    public void SetCliffColor(IVector4Animation sideColor) {
+      this.cliffColor = sideColor;
       // foreach (var tsv in tileSymbolViews) {
       //   tsv.SetSidesColor(sideColor);
       // }
@@ -411,7 +417,7 @@ namespace Domino {
         outlinesObject.transform.localRotation = rotation;
         outlineGameObjects.Add(outlinesObject);
       }
-      RefreshFrontColor();
+      RefreshSurfaceColor();
     }
 
 

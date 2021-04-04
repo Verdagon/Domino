@@ -47,8 +47,8 @@ namespace Geomancer {
       this.terrain = terrain;
 
       var eternalMemberId = nextMemberId++;
-      membersFrontColors.Add((eternalMemberId, Vector4Animation.Color(.4f, .4f, 0, 1)));
-      membersSideColors.Add((eternalMemberId, Vector4Animation.Color(.4f, .4f, 0, 1)));
+      membersFrontColors.Add((eternalMemberId, Vector4Animation.Color(0, 0, 1f, 1)));
+      membersSideColors.Add((eternalMemberId, Vector4Animation.Color(0, 0, 1f, 1)));
 
       foreach (var member in terrainTile.members) {
         OnAddMember(member);
@@ -111,22 +111,22 @@ namespace Geomancer {
 
     public void SetHighlighted(bool highlighted) {
       this.highlighted = highlighted;
-      RefreshFrontColor();
+      RefreshSurfaceColor();
     }
     public void SetSelected(bool selected) {
       this.selected = selected;
-      RefreshFrontColor();
+      RefreshSurfaceColor();
     }
 
-    private void RefreshFrontColor() {
-      domino.SetFrontColor(
+    private void RefreshSurfaceColor() {
+      domino.SetSurfaceColor(
           tileViewId, 
           CalculateTintedFrontColor(
               membersFrontColors[membersFrontColors.Count - 1].Item2, selected, highlighted));
     }
 
     private void RefreshSideColor() {
-      domino.SetSidesColor(tileViewId, membersSideColors[membersSideColors.Count - 1].Item2);
+      domino.SetCliffColor(tileViewId, membersSideColors[membersSideColors.Count - 1].Item2);
     }
     
     private void RefreshFeature() {
@@ -194,7 +194,7 @@ namespace Geomancer {
         if (thing is MemberToViewMapper.TopColorDescriptionForIDescription topColor) {
           membersFrontColors.Add((memberId, topColor.color));
           if (tileViewId != 0) {
-            RefreshFrontColor();
+            RefreshSurfaceColor();
           }
         } else if (thing is MemberToViewMapper.SideColorDescriptionForIDescription sideColor) {
           membersSideColors.Add((memberId, sideColor.color));
@@ -257,7 +257,7 @@ namespace Geomancer {
         if (thing is MemberToViewMapper.TopColorDescriptionForIDescription topColor) {
           membersFrontColors.RemoveAll(x => x.Item1 == memberId);
           if (tileViewId != 0) {
-            RefreshFrontColor();
+            RefreshSurfaceColor();
           }
         } else if (thing is MemberToViewMapper.SideColorDescriptionForIDescription sideColor) {
           membersSideColors.RemoveAll(x => x.Item1 == memberId);

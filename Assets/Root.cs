@@ -14,6 +14,7 @@ public class Root : MonoBehaviour {
   private SlowableTimerClock clock;
   private Loader loader;
   private DominoToGameConnection server;
+  private TerrainPresenter terrainPresenter;
 
   // public so we can see it in the unity editor
   public bool finishedStartMethod = false;
@@ -33,10 +34,6 @@ public class Root : MonoBehaviour {
 
     overlayPaneler = new OverlayPaneler(canvas.gameObject, loader, clock);
 
-    var pattern = PentagonPattern9.makePentagon9Pattern();
-
-    var tileShapeMeshCache = new TileShapeMeshCache(pattern);
-
     cameraController =
         new CameraController(
             clock,
@@ -44,7 +41,11 @@ public class Root : MonoBehaviour {
             new Vector3(0, 0, 0), //terrain.GetTileCenter(startLocation).ToUnity(),
             new Vector3(0, -10, 5));
 
-    var messages = server.Start(overlayPaneler.screenGW, overlayPaneler.screenGH);
+    server.Start(overlayPaneler.screenGW, overlayPaneler.screenGH);
+    // start here
+
+    Pattern pattern = null;
+    TileShapeMeshCache tileShapeMeshCache = null;
 
     finishedStartMethod = true;
   }
@@ -54,6 +55,23 @@ public class Root : MonoBehaviour {
       // There was probably an error in the logs that said why we're not loaded
       return;
     }
+
+    var messages = server.TakeMessages();
+    foreach (var message in messages) {
+      if (message is SetupGameMessage setupGame) {
+        terrainPresenter =
+            new TerrainPresenter(
+                server, clock, clock, loader, setupGame.pattern, setupGame.elevationStepHeight);
+        // setupGame.cameraPosition;
+      } else if (message is CreateTileMessage ||
+          message is SetSurfaceColorMessage ||
+          message is SetCliffColorMessage) {
+        terrainPresenter.HandleMessage(message);
+      } else {
+        Debug.LogWarning("Ignoring: " + message.GetType().Name);
+      }
+    }
+
 
     clock.Update();
 
@@ -100,8 +118,8 @@ public class Root : MonoBehaviour {
       server.KeyDown(-2, leftShiftDown, rightShiftDown, ctrlDown, leftAltDown, rightAltDown);
     }
 
-    // UnityEngine.Ray ray = camera.ScreenPointToRay(Input.mousePosition);
-    // terrainPresenter.UpdateMouse(ray);
+    UnityEngine.Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+    terrainPresenter.UpdateMouse(ray);
   }
 
 }

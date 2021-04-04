@@ -9,12 +9,15 @@ namespace Domino {
   public class SetupGameMessage : IDominoMessage {
     public readonly Vec3 cameraPosition;
     public readonly float elevationStepHeight;
+    public readonly Pattern pattern;
 
     public SetupGameMessage(
         Vec3 cameraPosition,
-        float elevationStepHeight) {
+        float elevationStepHeight,
+        Pattern pattern) {
       this.cameraPosition = cameraPosition;
       this.elevationStepHeight = elevationStepHeight;
+      this.pattern = pattern;
     }
   }
 
@@ -340,20 +343,20 @@ namespace Domino {
       this.maybeFeature = maybeFeature; 
     }
   }
-  public class SetSidesColorMessage : IDominoMessage {
+  public class SetCliffColorMessage : IDominoMessage {
     public readonly ulong tileViewId;
     public readonly IVector4Animation sideColor;
   
-    public SetSidesColorMessage(ulong tileViewId, IVector4Animation sideColor) {
+    public SetCliffColorMessage(ulong tileViewId, IVector4Animation sideColor) {
       this.tileViewId = tileViewId;
       this.sideColor = sideColor; 
     }
   }
-  public class SetFrontColorMessage : IDominoMessage {
+  public class SetSurfaceColorMessage : IDominoMessage {
     public readonly ulong tileViewId;
     public readonly IVector4Animation frontColor;
   
-    public SetFrontColorMessage(ulong tileViewId, IVector4Animation frontColor) {
+    public SetSurfaceColorMessage(ulong tileViewId, IVector4Animation frontColor) {
       this.tileViewId = tileViewId;
       this.frontColor = frontColor;
     }
