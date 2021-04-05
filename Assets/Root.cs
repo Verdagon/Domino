@@ -67,6 +67,25 @@ public class Root : MonoBehaviour {
           message is SetCliffColorMessage ||
           message is DestroyTileMessage) {
         terrainPresenter.HandleMessage(message);
+      } else if (message is CreateUnitMessage) {
+        UnitView.Create(
+            loader, clock, clock, new Vector3(10, 0, 0),
+            new UnitDescription(
+                new DominoDescription(true, Vector4Animation.RED),
+                new ExtrudedSymbolDescription(
+                    RenderPriority.DOMINO,
+                    new SymbolDescription(
+                        new SymbolId("AthSymbols", 0x006A),
+                        Vector4Animation.BLUE,
+                        0,
+                        0,
+                        OutlineMode.WithOutline),
+                    true,
+                    Vector4Animation.PINK),
+                new List<(ulong, ExtrudedSymbolDescription)>(),
+                1,
+                1),
+            new Vector3(0, -1, 0));
       } else if (message is MakePanelMessage ||
           message is ScheduleCloseMessage ||
           message is AddRectangleMessage ||

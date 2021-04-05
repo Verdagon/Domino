@@ -124,23 +124,23 @@ namespace Domino {
     //   return newSymbolMeshes;
     // }
 
-    public UnitView CreateUnitView(
-      IClock clock,
-        ITimer timer,
-        Vector3 basePosition,
-        UnitDescription description,
-        Vector3 cameraAngle) {
-      var unitGameObject = Instantiate(unitPrefab);
-      var unitView = unitGameObject.GetComponent<UnitView>();
-      unitView.Init(
-        clock,
-          this,
-          timer,
-          basePosition,
-          description,
-          cameraAngle);
-      return unitView;
-    }
+    // public UnitView CreateUnitView(
+    //   IClock clock,
+    //     ITimer timer,
+    //     Vector3 basePosition,
+    //     UnitDescription description,
+    //     Vector3 cameraAngle) {
+    //   var unitGameObject = Instantiate(unitPrefab);
+    //   var unitView = unitGameObject.GetComponent<UnitView>();
+    //   unitView.Init(
+    //     clock,
+    //       this,
+    //       timer,
+    //       basePosition,
+    //       description,
+    //       cameraAngle);
+    //   return unitView;
+    // }
 
     // public TileView CreateTileView(
     //   IClock clock,
@@ -188,14 +188,14 @@ namespace Domino {
       return symbolBarView;
     }
 
-    public DominoView CreateDominoView(
-      IClock clock,
-        DominoDescription description) {
-      var dominoGameObject = Instantiate(dominoPrefab);
-      var dominoView = dominoGameObject.GetComponent<DominoView>();
-      dominoView.Init(clock, this, description);
-      return dominoView;
-    }
+    // public DominoView CreateDominoView(
+    //   IClock clock,
+    //     DominoDescription description) {
+    //   var dominoGameObject = Instantiate(dominoPrefab);
+    //   var dominoView = dominoGameObject.GetComponent<DominoView>();
+    //   dominoView.Init(clock, this, description);
+    //   return dominoView;
+    // }
 
     public GameObject CreateSquare() {
       return Instantiate(squarePrefab);

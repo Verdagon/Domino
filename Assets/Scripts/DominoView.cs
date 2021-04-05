@@ -47,17 +47,27 @@ namespace Domino {
     // Lives inside this.gameObject.
     private GameObject innerObject;
 
-    Instantiator instantiator;
+    ILoader loader;
 
     bool large;
     IVector4Animation color;
 
-    public void Init(
+    public static DominoView Create(
         IClock clock,
-        Instantiator instantiator,
+        ILoader loader,
+        DominoDescription dominoDescription) {
+      var obj = loader.NewEmptyGameObject();
+      var dominoView = obj.AddComponent<DominoView>();
+      dominoView.Init(clock, loader, dominoDescription);
+      return dominoView;
+    }
+    
+    void Init(
+        IClock clock,
+        ILoader loader,
         DominoDescription dominoDescription) {
       this.clock = clock;
-      this.instantiator = instantiator;
+      this.loader = loader;
 
       InnerSetLarge(dominoDescription.large);
       InnerSetColor(dominoDescription.color);
@@ -73,11 +83,12 @@ namespace Domino {
 
     private void InnerSetLarge(bool newLarge) {
       Destroy(innerObject);
-      if (newLarge) {
-        innerObject = instantiator.CreateLargeDomino();
-      } else {
-        innerObject = instantiator.CreateSmallDomino();
-      }
+      innerObject = loader.NewQuad();
+      // if (newLarge) {
+      //   innerObject = loader.CreateLargeDomino();
+      // } else {
+      //   innerObject = loader.CreateSmallDomino();
+      // }
       large = newLarge;
       //InnerSetColor(color);
     }

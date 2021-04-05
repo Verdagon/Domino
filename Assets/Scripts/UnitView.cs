@@ -5,7 +5,6 @@ using UnityEngine;
 
 namespace Domino {
   public class UnitDescription {
-    public readonly object tag;
     public readonly DominoDescription dominoDescription;
     public readonly ExtrudedSymbolDescription faceSymbolDescription;
     public readonly List<(ulong, ExtrudedSymbolDescription)> detailSymbolDescriptionById;
@@ -13,13 +12,11 @@ namespace Domino {
     public readonly float mpRatio;
   
     public UnitDescription(
-        object tag,
         DominoDescription dominoDescription,
         ExtrudedSymbolDescription faceSymbolDescription,
         List<(ulong, ExtrudedSymbolDescription)> detailSymbolDescriptionById,
         float hpRatio,
         float mpRatio) {
-      this.tag = tag;
       this.dominoDescription = dominoDescription;
       this.faceSymbolDescription = faceSymbolDescription;
       this.detailSymbolDescriptionById = detailSymbolDescriptionById;
@@ -32,8 +29,6 @@ namespace Domino {
       if (!(obj is UnitDescription))
         return false;
       UnitDescription that = obj as UnitDescription;
-      if (tag != that.tag)
-        return false;
       if (!dominoDescription.Equals(that.dominoDescription))
         return false;
       if (!faceSymbolDescription.Equals(that.faceSymbolDescription))
@@ -54,7 +49,6 @@ namespace Domino {
     }
     public override int GetHashCode() {
       int hashCode = 0;
-      hashCode += 13 * tag.GetHashCode();
       hashCode += 17 * dominoDescription.GetHashCode();
       hashCode += 33 * faceSymbolDescription.GetHashCode();
       hashCode += 53 * detailSymbolDescriptionById.Count;
@@ -70,7 +64,7 @@ namespace Domino {
   public class UnitView : MonoBehaviour {
     private static readonly long HOP_DURATION_MS = 300;
 
-    Instantiator instantiator;
+    ILoader loader;
 
     IClock clock;
     ITimer timer;
@@ -130,15 +124,28 @@ namespace Domino {
     // also destroy them if we need to Destruct fast.
     private List<KeyValuePair<SymbolView, int>> transientRunesAndTimerIds;
 
-    public void Init(
+    public static UnitView Create(
+        ILoader loader,
+        IClock clock,
+        ITimer timer,
+        Vector3 basePosition,
+        UnitDescription unitDescription,
+        Vector3 cameraAngle) {
+      var obj = loader.NewEmptyGameObject();
+      var unitView = obj.AddComponent<UnitView>();
+      unitView.Init(loader, clock, timer, basePosition, unitDescription, cameraAngle);
+      return unitView;
+    }
+    
+    void Init(
+        ILoader loader,
       IClock clock,
-        Instantiator instantiator,
         ITimer timer,
         Vector3 basePosition,
         UnitDescription unitDescription,
         Vector3 cameraAngle) {
       this.clock = clock;
-      this.instantiator = instantiator;
+      this.loader = loader;
       this.timer = timer;
       this.basePosition = basePosition;
       this.description = unitDescription;
@@ -163,33 +170,33 @@ namespace Domino {
       body.transform.localScale = new Vector3(.8f, .8f, .8f);
       body.transform.localPosition = new Vector3(0, 0, -.25f);
 
-      dominoView = instantiator.CreateDominoView(clock, unitDescription.dominoDescription);
+      dominoView = DominoView.Create(clock, loader, unitDescription.dominoDescription);
       dominoView.gameObject.transform.SetParent(body.transform, false);
 
-      faceSymbolView = instantiator.CreateSymbolView(clock, true, unitDescription.faceSymbolDescription);
+      faceSymbolView = SymbolView.Create(clock, loader, unitDescription.faceSymbolDescription);
       faceSymbolView.gameObject.transform.FromMatrix(
           ScaleToAndCenterInTile(unitDescription.dominoDescription.large));
       faceSymbolView.gameObject.transform.SetParent(body.transform, false);
 
-      if (unitDescription.detailSymbolDescriptionById.Count != 0) {
-        symbolBarView = MakeSymbolBarView(clock, instantiator, unitDescription.detailSymbolDescriptionById, unitDescription.dominoDescription.large);
-        symbolBarView.gameObject.transform.SetParent(body.transform, false);
-      }
-
-      bool showHpMeter = unitDescription.hpRatio < .999f;
-      if (showHpMeter) {
-        hpMeterView = instantiator.CreateMeterView(clock, unitDescription.hpRatio, Vector4Animation.GREEN, Vector4Animation.RED);
-        hpMeterView.gameObject.transform.FromMatrix(MakeMeterViewTransform(0));
-        hpMeterView.transform.SetParent(body.transform, false);
-      }
-
-      bool showMpMeter = unitDescription.mpRatio < .999f;
-      if (showMpMeter) {
-        int position = (showHpMeter ? 1 : 0);
-        mpMeterView = instantiator.CreateMeterView(clock, unitDescription.mpRatio, Vector4Animation.BLUE, Vector4Animation.WHITE);
-        mpMeterView.gameObject.transform.FromMatrix(MakeMeterViewTransform(position));
-        mpMeterView.transform.SetParent(body.transform, false);
-      }
+      // if (unitDescription.detailSymbolDescriptionById.Count != 0) {
+      //   symbolBarView = MakeSymbolBarView(clock, instantiator, unitDescription.detailSymbolDescriptionById, unitDescription.dominoDescription.large);
+      //   symbolBarView.gameObject.transform.SetParent(body.transform, false);
+      // }
+      //
+      // bool showHpMeter = unitDescription.hpRatio < .999f;
+      // if (showHpMeter) {
+      //   hpMeterView = instantiator.CreateMeterView(clock, unitDescription.hpRatio, Vector4Animation.GREEN, Vector4Animation.RED);
+      //   hpMeterView.gameObject.transform.FromMatrix(MakeMeterViewTransform(0));
+      //   hpMeterView.transform.SetParent(body.transform, false);
+      // }
+      //
+      // bool showMpMeter = unitDescription.mpRatio < .999f;
+      // if (showMpMeter) {
+      //   int position = (showHpMeter ? 1 : 0);
+      //   mpMeterView = instantiator.CreateMeterView(clock, unitDescription.mpRatio, Vector4Animation.BLUE, Vector4Animation.WHITE);
+      //   mpMeterView.gameObject.transform.FromMatrix(MakeMeterViewTransform(position));
+      //   mpMeterView.transform.SetParent(body.transform, false);
+      // }
 
       initialized = true;
       instanceAlive = true;
@@ -205,63 +212,63 @@ namespace Domino {
       Debug.LogWarning("impl set desc unitview");
       // faceSymbolView.SetDescription(newUnitDescription.faceSymbolDescription);
     
-      if (symbolBarView == null) {
-        if (newUnitDescription.detailSymbolDescriptionById.Count == 0) {
-          // Dont do anything, its already gone
-        } else {
-          symbolBarView = MakeSymbolBarView(clock, instantiator, newUnitDescription.detailSymbolDescriptionById, newUnitDescription.dominoDescription.large);
-          symbolBarView.gameObject.transform.SetParent(body.transform, false);
-        }
-      } else {
-        if (newUnitDescription.detailSymbolDescriptionById.Count == 0) {
-          symbolBarView.Destruct();
-          symbolBarView = null;
-        } else {
-          symbolBarView.SetDescriptions(newUnitDescription.detailSymbolDescriptionById);
-        }
-      }
+      // if (symbolBarView == null) {
+      //   if (newUnitDescription.detailSymbolDescriptionById.Count == 0) {
+      //     // Dont do anything, its already gone
+      //   } else {
+      //     symbolBarView = MakeSymbolBarView(clock, instantiator, newUnitDescription.detailSymbolDescriptionById, newUnitDescription.dominoDescription.large);
+      //     symbolBarView.gameObject.transform.SetParent(body.transform, false);
+      //   }
+      // } else {
+      //   if (newUnitDescription.detailSymbolDescriptionById.Count == 0) {
+      //     symbolBarView.Destruct();
+      //     symbolBarView = null;
+      //   } else {
+      //     symbolBarView.SetDescriptions(newUnitDescription.detailSymbolDescriptionById);
+      //   }
+      // }
     
-      bool shouldShowHpMeter = newUnitDescription.hpRatio < .999f;
-      bool didShowHpMeter = (hpMeterView != null);
-      bool showingHpMeterChanged = (shouldShowHpMeter != didShowHpMeter);
-      if (shouldShowHpMeter) {
-        if (hpMeterView == null) {
-          hpMeterView = instantiator.CreateMeterView(clock, newUnitDescription.hpRatio, Vector4Animation.GREEN, Vector4Animation.RED);
-          hpMeterView.gameObject.transform.FromMatrix(MakeMeterViewTransform(0));
-          hpMeterView.transform.SetParent(body.transform, false);
-        } else {
-          hpMeterView.ratio = newUnitDescription.hpRatio;
-        }
-      } else {
-        if (hpMeterView == null) {
-          // Do nothing
-        } else {
-          hpMeterView.Destruct();
-          hpMeterView = null;
-        }
-      }
+      // bool shouldShowHpMeter = newUnitDescription.hpRatio < .999f;
+      // bool didShowHpMeter = (hpMeterView != null);
+      // bool showingHpMeterChanged = (shouldShowHpMeter != didShowHpMeter);
+      // if (shouldShowHpMeter) {
+      //   if (hpMeterView == null) {
+      //     hpMeterView = instantiator.CreateMeterView(clock, newUnitDescription.hpRatio, Vector4Animation.GREEN, Vector4Animation.RED);
+      //     hpMeterView.gameObject.transform.FromMatrix(MakeMeterViewTransform(0));
+      //     hpMeterView.transform.SetParent(body.transform, false);
+      //   } else {
+      //     hpMeterView.ratio = newUnitDescription.hpRatio;
+      //   }
+      // } else {
+      //   if (hpMeterView == null) {
+      //     // Do nothing
+      //   } else {
+      //     hpMeterView.Destruct();
+      //     hpMeterView = null;
+      //   }
+      // }
     
-      bool shouldShowMpMeter = newUnitDescription.mpRatio < .999f;
-      int mpMeterPosition = (shouldShowHpMeter ? 1 : 0);
-      if (shouldShowMpMeter) {
-        if (mpMeterView == null) {
-          mpMeterView = instantiator.CreateMeterView(clock, newUnitDescription.mpRatio, Vector4Animation.BLUE, Vector4Animation.WHITE);
-          mpMeterView.gameObject.transform.FromMatrix(MakeMeterViewTransform(mpMeterPosition));
-          mpMeterView.transform.SetParent(body.transform, false);
-        } else {
-          mpMeterView.ratio = newUnitDescription.mpRatio;
-        }
-      } else {
-        if (mpMeterView == null) {
-          // Do nothing
-        } else {
-          mpMeterView.Destruct();
-          mpMeterView = null;
-        }
-      }
-      if (shouldShowMpMeter && showingHpMeterChanged) {
-        mpMeterView.gameObject.transform.FromMatrix(MakeMeterViewTransform(mpMeterPosition));
-      }
+      // bool shouldShowMpMeter = newUnitDescription.mpRatio < .999f;
+      // int mpMeterPosition = (shouldShowHpMeter ? 1 : 0);
+      // if (shouldShowMpMeter) {
+      //   if (mpMeterView == null) {
+      //     mpMeterView = instantiator.CreateMeterView(clock, newUnitDescription.mpRatio, Vector4Animation.BLUE, Vector4Animation.WHITE);
+      //     mpMeterView.gameObject.transform.FromMatrix(MakeMeterViewTransform(mpMeterPosition));
+      //     mpMeterView.transform.SetParent(body.transform, false);
+      //   } else {
+      //     mpMeterView.ratio = newUnitDescription.mpRatio;
+      //   }
+      // } else {
+      //   if (mpMeterView == null) {
+      //     // Do nothing
+      //   } else {
+      //     mpMeterView.Destruct();
+      //     mpMeterView = null;
+      //   }
+      // }
+      // if (shouldShowMpMeter && showingHpMeterChanged) {
+      //   mpMeterView.gameObject.transform.FromMatrix(MakeMeterViewTransform(mpMeterPosition));
+      // }
     }
 
     private static Matrix4x4 MakeMeterViewTransform(int position) {
@@ -358,28 +365,28 @@ namespace Domino {
     }
 
     public long ShowRune(ExtrudedSymbolDescription runeSymbolDescription) {
-      var symbolView = instantiator.CreateSymbolView(clock, true, runeSymbolDescription);
-      symbolView.transform.localRotation = Quaternion.Euler(new Vector3(0, 180, 0));
-      symbolView.transform.localScale = new Vector3(1, 1, .1f);
-      if (description.dominoDescription.large) {
-        symbolView.transform.localPosition = new Vector3(0, 1f, -.2f);
-      } else {
-        symbolView.transform.localPosition = new Vector3(0, 0.5f, -.2f);
-      }
-      symbolView.transform.SetParent(body.transform, false);
-      symbolView.FadeInThenOut(100, 400);
-      int timerId =
-        timer.ScheduleTimer(1000, () => {
-          for (int i = 0; i < transientRunesAndTimerIds.Count; i++) {
-            if (transientRunesAndTimerIds[i].Key == symbolView) {
-              transientRunesAndTimerIds.RemoveAt(i);
-              symbolView.Destruct();
-              return;
-            }
-          }
-          Asserts.Assert(false, "Couldnt find!");
-        });
-      transientRunesAndTimerIds.Add(new KeyValuePair<SymbolView, int>(symbolView, timerId));
+      // var symbolView = instantiator.CreateSymbolView(clock, true, runeSymbolDescription);
+      // symbolView.transform.localRotation = Quaternion.Euler(new Vector3(0, 180, 0));
+      // symbolView.transform.localScale = new Vector3(1, 1, .1f);
+      // if (description.dominoDescription.large) {
+      //   symbolView.transform.localPosition = new Vector3(0, 1f, -.2f);
+      // } else {
+      //   symbolView.transform.localPosition = new Vector3(0, 0.5f, -.2f);
+      // }
+      // symbolView.transform.SetParent(body.transform, false);
+      // symbolView.FadeInThenOut(100, 400);
+      // int timerId =
+      //   timer.ScheduleTimer(1000, () => {
+      //     for (int i = 0; i < transientRunesAndTimerIds.Count; i++) {
+      //       if (transientRunesAndTimerIds[i].Key == symbolView) {
+      //         transientRunesAndTimerIds.RemoveAt(i);
+      //         symbolView.Destruct();
+      //         return;
+      //       }
+      //     }
+      //     Asserts.Assert(false, "Couldnt find!");
+      //   });
+      // transientRunesAndTimerIds.Add(new KeyValuePair<SymbolView, int>(symbolView, timerId));
       return clock.GetTimeMs() + 500;
     }
 
