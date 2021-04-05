@@ -163,7 +163,6 @@ namespace Domino {
 
   class AddButtonMessage : IDominoMessage {
     public readonly ulong newViewId;
-    // public readonly int panelId;
     public readonly ulong parentViewId;
     public readonly float x;
     public readonly float y;

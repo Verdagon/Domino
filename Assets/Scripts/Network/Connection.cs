@@ -1,18 +1,43 @@
+using System;
 using System.Collections.Generic;
 using Geomancer;
 using Geomancer.Model;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 namespace Domino {
 
   public class GameToDominoConnection {
+    public delegate void IEventHandler();
+    public interface IEvent {}
+    public class Event : IEvent, IDisposable {
+      public ulong id { get; private set; }
+      public IEventHandler handler { get; private set; }
+      public Event(ulong id, IEventHandler handler) {
+        this.id = id;
+        this.handler = handler;
+      }
+      public void Dispose() {
+        Asserts.Assert(handler != null);
+        id = 0;
+        handler = null;
+      }
+      public void Trigger() {
+        Asserts.Assert(handler != null);
+        handler();
+      }
+    }
+
     public DominoToGameConnection otherSide;
     public EditorServer server;
 
     private List<IDominoMessage> messages = new List<IDominoMessage>();
     private ulong nextId = 1;
 
+    private Dictionary<ulong, Event> events;
+
     public GameToDominoConnection(DominoToGameConnection otherSide) {
+      events = new Dictionary<ulong, Event>();
       this.otherSide = otherSide;
       server = new EditorServer(this);
     }
@@ -26,6 +51,28 @@ namespace Domino {
       messages.Add(new MakePanelMessage(id, panelGXInScreen, panelGYInScreen, panelGW, panelGH));
       return id;
       // return new Panel(this, id, panelGW, panelGH);
+    }
+
+    public IEvent MakeEvent(IEventHandler handler) {
+      var id = nextId++;
+      var e = new Event(id, handler);
+      events.Add(id, e);
+      return e;
+    }
+    public Event DestroyEvent(IEvent ie) {
+      var e = ie as Event;
+      Asserts.Assert(e != null);
+      events.Remove(e.id);
+      e.Dispose();
+      return e;
+    }
+
+    public void TriggerEvent(ulong id) {
+      if (events.TryGetValue(id, out var e)) {
+        e.Trigger();
+      } else {
+        throw new Exception("Unknown event triggered: " + id);
+      }
     }
 
     public ulong CreateTile(InitialTile initialTile) {
@@ -89,14 +136,21 @@ namespace Domino {
         Color color,
         Color borderColor,
         Color pressedColor,
-        ulong onClicked,
-        ulong onMouseIn,
-        ulong onMouseOut) {
+        IEvent onClickedI,
+        IEvent onMouseInI,
+        IEvent onMouseOutI) {
+      var onClicked = onClickedI as Event;
+      Asserts.Assert(onClicked != null);
+      var onMouseIn = onMouseInI as Event;
+      Asserts.Assert(onMouseIn != null);
+      var onMouseOut = onMouseOutI as Event;
+      Asserts.Assert(onMouseOut != null);
+      
       ulong newViewId = nextId++;
       messages.Add(
           new AddButtonMessage(
-              newViewId, parentViewId, x, y, width, height, z, color, borderColor, pressedColor, onClicked,
-              onMouseIn, onMouseOut));
+              newViewId, parentViewId, x, y, width, height, z, color, borderColor, pressedColor, onClicked.id,
+              onMouseIn.id, onMouseOut.id));
       return newViewId;
     }
 
@@ -198,7 +252,11 @@ namespace Domino {
     public void KeyDown(int c, bool leftShiftDown, bool rightShiftDown, bool ctrlDown, bool leftAltDown, bool rightAltDown) {
       otherSide.server.KeyDown(c, leftShiftDown, rightShiftDown, ctrlDown, leftAltDown, rightAltDown);
     }
-    
+
+    public void TriggerEvent(ulong e) {
+      otherSide.TriggerEvent(e);
+    }
+
     public void SetHoveredLocation(ulong tileViewId, Location location) {
       otherSide.server.SetHoveredLocation(tileViewId, location);
     }

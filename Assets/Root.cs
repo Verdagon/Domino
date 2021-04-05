@@ -74,7 +74,8 @@ public class Root : MonoBehaviour {
           message is AddSymbolMessage ||
           message is RemoveViewMessage ||
           message is SetFadeInMessage ||
-          message is SetFadeOutMessage) {
+          message is SetFadeOutMessage ||
+          message is AddButtonMessage) {
         panelPresenter.HandleMessage(message);
       } else {
         Debug.LogWarning("Ignoring: " + message.GetType().Name);

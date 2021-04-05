@@ -69,6 +69,27 @@ namespace Geomancer {
         panel.ScheduleClose(scheduleClose.startMsFromNow);
         idToPanel.Remove(panelId);
         viewIdToPanelId.Remove(scheduleClose.viewId);
+      } else if (message is AddButtonMessage addButton) {
+        Debug.Log(
+            $"AddButton newViewId {addButton.newViewId} parentViewId {addButton.parentViewId} x {addButton.x} y {addButton.y} width {addButton.width} height {addButton.height} z {addButton.z} color {addButton.color} borderColor {addButton.borderColor} pressedColor {addButton.pressedColor} onClicked {addButton.onClicked} onMouseIn {addButton.onMouseIn} onMouseOut {addButton.onMouseOut}");
+        
+        var panelId = viewIdToPanelId[addButton.parentViewId];
+        var panel = idToPanel[panelId];
+        panel.AddButton(
+            addButton.newViewId,
+            addButton.parentViewId,
+            addButton.x,
+            addButton.y,
+            addButton.width,
+            addButton.height,
+            addButton.z,
+            addButton.color,
+            addButton.borderColor,
+            addButton.pressedColor,
+            () => server.TriggerEvent(addButton.onClicked),
+            () => server.TriggerEvent(addButton.onMouseIn),
+            () => server.TriggerEvent(addButton.onMouseOut));
+        viewIdToPanelId.Add(addButton.newViewId, panelId);
       } else if (message is AddRectangleMessage addRectangle) {
         Debug.Log(
             $"AddRectangle newViewId {addRectangle.newViewId} parentViewId {addRectangle.parentViewId} x {addRectangle.x} y {addRectangle.y} width {addRectangle.width} height {addRectangle.height} z {addRectangle.z} color {addRectangle.color} borderColor {addRectangle.borderColor}");

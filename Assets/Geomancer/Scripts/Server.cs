@@ -139,7 +139,28 @@ namespace Geomancer {
           break;
         case 'z':
           var panelId = domino.MakePanel(-1, -1, screenGW + 2, screenGH + 2);
-          domino.AddRectangle(panelId, 0, 0, screenGW + 2, screenGH + 2, 0, Color.black, Color.black);
+          var rect = domino.AddRectangle(panelId, 0, 0, screenGW + 2, screenGH + 2, 0, Color.black, Color.black);
+          GameToDominoConnection.IEventHandler remove = null;
+          var onClick = domino.MakeEvent(() => {
+            Debug.Log("clicked!");
+            remove();
+          });
+          var onMouseIn = domino.MakeEvent(() => Debug.Log("mouse in!"));
+          var onMouseOut = domino.MakeEvent(() => Debug.Log("mouse out!"));
+          var button = domino.AddButton(
+              rect, 2, 2, 15, 4, 0, new Color(.6f, .6f, .6f), new Color(.61f, .61f, .61f), new Color(.4f, .4f, .4f), onClick, onMouseIn, onMouseOut);
+          var strIds = domino.AddString(button, 3, 3, 15, Color.cyan, AthPlayer.Fonts.PROSE_OVERLAY_FONT, "hello");
+          remove = () => {
+            foreach (var id in strIds) {
+              domino.RemoveView(id);
+            }
+            domino.RemoveView(button);
+            domino.DestroyEvent(onMouseOut);
+            domino.DestroyEvent(onMouseIn);
+            domino.DestroyEvent(onClick);
+            domino.RemoveView(rect);
+            domino.RemoveView(panelId);
+          };
           break;
         case '=':
         case '+':
