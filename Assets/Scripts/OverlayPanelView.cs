@@ -19,9 +19,9 @@ namespace Domino {
 
   public class OverlayPanelView : MonoBehaviour {
     private class OverlayObject {
-      public readonly int id;
+      public readonly ulong id;
       public readonly GameObject gameObject;
-      public readonly HashSet<int> childIds;
+      public readonly HashSet<ulong> childIds;
       public GameObject[] borderRectGameObjects = new GameObject[0];
       public FadeIn fadeIn; // Null if no fade in
       public FadeOut fadeOut; // Null if no fade out
@@ -29,10 +29,10 @@ namespace Domino {
       public Color buttonPressedColor; // Or a=0 if not button
       public Color borderColor; // Or a=0 if not button
 
-      public OverlayObject(int id, GameObject gameObject) {
+      public OverlayObject(ulong id, GameObject gameObject) {
         this.id = id;
         this.gameObject = gameObject;
-        this.childIds = new HashSet<int>();
+        this.childIds = new HashSet<ulong>();
       }
     }
 
@@ -68,6 +68,7 @@ namespace Domino {
     ILoader loader;
     IClock cinematicTimer;
 
+    private ulong rootId;
     private long openTimeMs;
     private long startFadeOutTimeAfterOpenMs;
     private long finishFadeOutTimeAfterOpenMs;
@@ -81,12 +82,12 @@ namespace Domino {
     public int symbolsWide { get; private set; }
     public int symbolsHigh { get; private set; }
 
-    int nextId = 1000;
-    private Dictionary<int, OverlayObject> overlayObjects;
-    private HashSet<int> fadingObjectIds;
-    private Dictionary<int, int> parentIdByChildId;
+    private Dictionary<ulong, OverlayObject> overlayObjects;
+    private HashSet<ulong> fadingObjectIds;
+    private Dictionary<ulong, ulong> parentIdByChildId;
 
     public static OverlayPanelView Create(
+        ulong rootId,
         ILoader loader,
         GameObject parent,
         IClock cinematicTimer,
@@ -99,6 +100,7 @@ namespace Domino {
       var obj = loader.NewEmptyUIObject();
       var spv = obj.AddComponent<OverlayPanelView>();
       spv.Init(
+          rootId,
           loader,
           cinematicTimer,
           parent,
@@ -113,6 +115,7 @@ namespace Domino {
     }
 
     public void Init(
+        ulong rootId,
         ILoader loader,
         IClock cinematicTimer,
         GameObject parent,
@@ -122,6 +125,7 @@ namespace Domino {
         int symbolsHigh,
         float symbolWidth,
         float symbolHeight) {
+      this.rootId = rootId;
       this.loader = loader;
       this.panelUnityXInParent = panelUnityXInParent;
       this.panelUnityYInParent = panelUnityYInParent;
@@ -129,10 +133,10 @@ namespace Domino {
       this.symbolHeight = symbolHeight;
       this.symbolsWide = symbolsWide;
       this.symbolsHigh = symbolsHigh;
-      parentIdByChildId = new Dictionary<int, int>();
-      overlayObjects = new Dictionary<int, OverlayObject>();
-      overlayObjects.Add(0, new OverlayObject(0, gameObject));
-      fadingObjectIds = new HashSet<int>();
+      parentIdByChildId = new Dictionary<ulong, ulong>();
+      overlayObjects = new Dictionary<ulong, OverlayObject>();
+      overlayObjects.Add(rootId, new OverlayObject(rootId, gameObject));
+      fadingObjectIds = new HashSet<ulong>();
 
       this.cinematicTimer = cinematicTimer;
       this.openTimeMs = cinematicTimer.GetTimeMs();
@@ -150,7 +154,7 @@ namespace Domino {
       panelRectTransform.sizeDelta = new Vector2(symbolsWide * symbolWidth, symbolsHigh * symbolHeight);
     }
 
-    public void SetFadeIn(int id, FadeIn fadeIn) {
+    public void SetFadeIn(ulong id, FadeIn fadeIn) {
       Asserts.Assert(overlayObjects.ContainsKey(id));
       var overlayObject = overlayObjects[id];
       overlayObject.fadeIn = fadeIn;
@@ -158,7 +162,7 @@ namespace Domino {
       SetOpacity(overlayObject, 0);
     }
 
-    public void SetFadeOut(int id, FadeOut fadeOut) {
+    public void SetFadeOut(ulong id, FadeOut fadeOut) {
       Asserts.Assert(overlayObjects.ContainsKey(id));
       var overlayObject = overlayObjects[id];
       overlayObject.fadeOut = fadeOut;
@@ -166,19 +170,21 @@ namespace Domino {
       UpdateOpacity(overlayObject);
     }
 
-    public int AddSymbol(
-        int parentId,
+    public void AddSymbol(
+        ulong newViewId,
+        ulong parentId,
         float x,
         float y,
         float size,
         int z,
         Color color,
         SymbolId symbol) {
-      return AddSymbol(parentId, x, y, size, z, color, symbol, false);
+      AddSymbol(newViewId, parentId, x, y, size, z, color, symbol, false);
     }
     
-    public int AddSymbol(
-        int parentId,
+    public void AddSymbol(
+        ulong newViewId,
+        ulong parentId,
         float x,
         float y,
         float size,
@@ -215,18 +221,16 @@ namespace Domino {
 
       textView.text = char.ConvertFromUtf32(symbol.unicode);
 
-      int id = nextId++;
-      var overlayObject = new OverlayObject(id, textGameObject);
+      var overlayObject = new OverlayObject(newViewId, textGameObject);
       overlayObject.color = color;
-      overlayObjects.Add(id, overlayObject);
-      parentIdByChildId.Add(id, parentId);
-      overlayObjects[parentId].childIds.Add(id);
-
-      return id;
+      overlayObjects.Add(newViewId, overlayObject);
+      parentIdByChildId.Add(newViewId, parentId);
+      overlayObjects[parentId].childIds.Add(newViewId);
     }
 
-    public int AddRectangle(
-        int parentId,
+    public void AddRectangle(
+        ulong newViewId,
+        ulong parentId,
         float x,
         float y,
         float width,
@@ -238,11 +242,12 @@ namespace Domino {
       var unityY = y * symbolHeight;
       var unityWidth = width * symbolWidth;
       var unityHeight = height * symbolHeight;
-      return AddRectangleUnityCoords(parentId, unityX, unityY, unityWidth, unityHeight, z, color, borderColor);
+      AddRectangleUnityCoords(newViewId, parentId, unityX, unityY, unityWidth, unityHeight, z, color, borderColor);
     }
 
-    private int AddRectangleUnityCoords(
-        int parentId,
+    private void AddRectangleUnityCoords(
+        ulong newViewId,
+        ulong parentId,
         float unityX,
         float unityY,
         float unityWidth,
@@ -312,20 +317,18 @@ namespace Domino {
       var image = rectGameObject.AddComponent<Image>();
       image.color = color;
 
-      int id = nextId++;
-      var overlayObject = new OverlayObject(id, rectGameObject);
+      var overlayObject = new OverlayObject(newViewId, rectGameObject);
       overlayObject.color = color;
       overlayObject.borderRectGameObjects = borderRectGameObjects;
       overlayObject.borderColor = borderColor;
-      overlayObjects.Add(id, overlayObject);
-      parentIdByChildId.Add(id, parentId);
-      overlayObjects[parentId].childIds.Add(id);
+      overlayObjects.Add(newViewId, overlayObject);
+      parentIdByChildId.Add(newViewId, parentId);
+      overlayObjects[parentId].childIds.Add(newViewId);
 
-      Asserts.Assert(overlayObjects.ContainsKey(id));
-      return id;
+      Asserts.Assert(overlayObjects.ContainsKey(newViewId));
     }
 
-    public int AddFullscreenRect(Color color) {
+    public void AddFullscreenRect(ulong newViewId, Color color) {
       var parent = gameObject.transform.parent.gameObject;
       var parentRectTransform = parent.GetComponent<RectTransform>();
       var parentWidth = parentRectTransform.rect.width;
@@ -333,8 +336,9 @@ namespace Domino {
 
       var panelRectTransform = gameObject.GetComponent<RectTransform>();
 
-      return AddRectangleUnityCoords(
-        0,
+      AddRectangleUnityCoords(
+        newViewId,
+        rootId,
         -panelRectTransform.anchoredPosition.x,
         -panelRectTransform.anchoredPosition.y,
         parentWidth,
@@ -344,8 +348,9 @@ namespace Domino {
         new Color(0, 0, 0, 0));
     }
 
-    public int AddButton(
-        int parentId,
+    public void AddButton(
+        ulong newViewId,
+        ulong parentId,
         float x,
         float y,
         float width,
@@ -357,8 +362,8 @@ namespace Domino {
         OnClicked onClicked,
         OnClicked onMouseIn,
         OnClicked onMouseOut) {
-      var rectangleId = AddRectangle(parentId, x, y, width, height, z, color, borderColor);
-      var overlayObject = overlayObjects[rectangleId];
+      AddRectangle(newViewId, parentId, x, y, width, height, z, color, borderColor);
+      var overlayObject = overlayObjects[newViewId];
 
       var button = overlayObject.gameObject.AddComponent<Button>();
       button.onClick.AddListener(() => onClicked());
@@ -375,27 +380,22 @@ namespace Domino {
       uiClickListener.MouseExit += () => onMouseOut();
 
       overlayObject.buttonPressedColor = pressedColor;
-
-      return rectangleId;
     }
 
-    public int AddBackground(Color color, Color borderColor) {
-      return AddRectangle(0, 0, 0, symbolsWide, symbolsHigh, 1, color, borderColor);
+    public void AddBackground(ulong newiewId, Color color, Color borderColor) {
+      AddRectangle(newiewId, rootId, 0, 0, symbolsWide, symbolsHigh, 1, color, borderColor);
     }
 
-    //public int AddBackgroundAndBorder(Color backgroundColor, Color borderColor) {
+    //public ulong AddBackgroundAndBorder(Color backgroundColor, Color borderColor) {
     //  int borderId = AddBackground(borderColor);
     //  AddRectangle(borderId, .5f, .5f, symbolsWide - 1, symbolsHigh - 1, 1, backgroundColor);
     //  return borderId;
     //}
 
-    public List<int> AddString(int parentId, float x, float y, int maxWide, Color color, string fontName, string str) {
-      var ids = new List<int>();
+    public void AddString(List<ulong> ids, ulong parentId, float x, float y, int maxWide, Color color, string fontName, string str) {
       for (int i = 0; i < str.Length; i++) {
-        int id = AddSymbol(parentId, x + i, y, 1f, 1, color, new SymbolId(fontName, char.ConvertToUtf32(str[i].ToString(), 0)));
-        ids.Add(id);
+        AddSymbol(ids[i], parentId, x + i, y, 1f, 1, color, new SymbolId(fontName, char.ConvertToUtf32(str[i].ToString(), 0)));
       }
-      return ids;
     }
 
     public void Update() {
@@ -404,7 +404,7 @@ namespace Domino {
         return;
       }
       Asserts.Assert(fadingObjectIds != null);
-      foreach (var id in new HashSet<int>(fadingObjectIds))
+      foreach (var id in new HashSet<ulong>(fadingObjectIds))
         UpdateOpacity(overlayObjects[id]);
 
       var timeSinceOpenMs = cinematicTimer.GetTimeMs() - openTimeMs;
@@ -470,7 +470,7 @@ namespace Domino {
       }
     }
 
-    public void SetOpacity(int id, float ratio) {
+    public void SetOpacity(ulong id, float ratio) {
       Asserts.Assert(overlayObjects.ContainsKey(id));
       SetOpacity(overlayObjects[id], ratio);
     }
@@ -518,10 +518,10 @@ namespace Domino {
       }
     }
 
-    public void Remove(int id) {
-      if (id == 0) {
+    public void Remove(ulong id) {
+      if (id == rootId) {
         while (overlayObjects.Count > 1) {
-          int first = 0;
+          ulong first = 0;
           foreach (var entry in overlayObjects) {
             if (entry.Key != 0) {
               first = entry.Key;
@@ -548,14 +548,14 @@ namespace Domino {
         }
         overlayObjects.Remove(id);
 
-        int parentId = parentIdByChildId[id];
+        ulong parentId = parentIdByChildId[id];
         parentIdByChildId.Remove(id);
 
         overlayObjects[parentId].childIds.Remove(id);
       }
     }
 
-    //public void OnButtonClick(int id) {
+    //public void OnButtonClick(ulong id) {
     //  Clicked?.Invoke(id);
     //}
 

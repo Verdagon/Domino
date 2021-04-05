@@ -55,7 +55,6 @@ namespace Geomancer {
         domino.MakePanel(panelGXInScreen, panelGYInScreen, screenGW, panelGH);
       domino.AddRectangle(
         visibleOverlayPanelView,
-        0,
         -1,
         0,
         1 + screenGW + 1,
@@ -68,11 +67,11 @@ namespace Geomancer {
       if (status.Length == 0 && symbolsAndLabels.Count == 0) {
         var lines = LineWrapper.Wrap(message, screenGW - 2 - buttonsWidth);
         for (int i = 0; i < lines.Length; i++) {
-          domino.AddString(visibleOverlayPanelView, 0, 1, contentYStart + 2 - i, screenGW - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, lines[i]);
+          domino.AddString(visibleOverlayPanelView, 1, contentYStart + 2 - i, screenGW - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, lines[i]);
         }
       } else {
-        domino.AddString(visibleOverlayPanelView, 0, 1, contentYStart + 2, screenGW - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, message);
-        domino.AddString(visibleOverlayPanelView, 0, screenGW - buttonsWidth - 1 - status.Length, contentYStart + 2, screenGW - 20 - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, status);
+        domino.AddString(visibleOverlayPanelView, 1, contentYStart + 2, screenGW - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, message);
+        domino.AddString(visibleOverlayPanelView, screenGW - buttonsWidth - 1 - status.Length, contentYStart + 2, screenGW - 20 - 2, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, status);
         domino.SetFadeIn(visibleOverlayPanelView, new OverlayPanelView.FadeIn(0, 100));
         domino.SetFadeOut(visibleOverlayPanelView, new OverlayPanelView.FadeOut(-200, 0));
 
@@ -85,7 +84,7 @@ namespace Geomancer {
           //visibleOverlayPanelView.AddSymbol(0, x, contentYStart, 1f, 1, symbol.frontColor.Get(long.MaxValue), symbol.symbolId, false);
           x += 2; // Symbol takes up a lot of space
 
-          domino.AddString(visibleOverlayPanelView, 0, x, contentYStart, 20, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, label);
+          domino.AddString(visibleOverlayPanelView, x, contentYStart, 20, new UnityEngine.Color(1, 1, 1, 1), Fonts.PROSE_OVERLAY_FONT, label);
           x += label.Length;
 
           x += 1; // Right margin

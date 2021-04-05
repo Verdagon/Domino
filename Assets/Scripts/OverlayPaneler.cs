@@ -44,12 +44,14 @@ namespace Domino {
     
     // G = in grid units
     public OverlayPanelView MakePanel(
+        ulong rootId,
         int panelGXInScreen,
         int panelGYInScreen,
         int panelGW,
         int panelGH) {
       var spv =
           OverlayPanelView.Create(
+              rootId,
               loader,
           panelRootGameObject,
           cinematicTimer,

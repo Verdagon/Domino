@@ -5,15 +5,7 @@ using UnityEngine;
 using Domino;
 
 namespace Geomancer {
-  public delegate void OnTerrainTileHovered(Location location);
-  public delegate void OnTerrainTileClicked(Location location);
-  public delegate void OnPhantomTileClicked(Location location);
-
   public class TerrainPresenter {
-    // public OnTerrainTileHovered TerrainTileHovered;
-    // public OnTerrainTileClicked TerrainTileClicked;
-    // public OnPhantomTileClicked PhantomTileClicked;
-
     private DominoToGameConnection server;
     private Pattern pattern;
     private float elevationStepHeight;
@@ -72,7 +64,7 @@ namespace Geomancer {
       } else if (message is SetCliffColorMessage setCliffColor) {
         tilePresenters[setCliffColor.tileViewId].HandleMessage(message);
       } else {
-        Asserts.Assert(false);
+        Asserts.Assert(false, message.GetType().Name);
       }
     }
 
@@ -82,6 +74,8 @@ namespace Geomancer {
         maybeMouseHoveredLocation = tileView;
         if (maybeMouseHoveredLocation != null) {
           server.SetHoveredLocation(maybeMouseHoveredLocation.tileViewId, maybeMouseHoveredLocation.location);
+        } else {
+          server.SetHoveredLocation(0, null);
         }
       }
 

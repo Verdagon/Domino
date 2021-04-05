@@ -43,7 +43,7 @@ namespace Domino {
       messages.Add(new SetupGameMessage(cameraPosition, elevationStepHeight, pattern));
     }
 
-    public void ScheduleClose(ulong viewId, ulong startMsFromNow) {
+    public void ScheduleClose(ulong viewId, long startMsFromNow) {
       messages.Add(new ScheduleCloseMessage(viewId, startMsFromNow));
     }
 
@@ -65,7 +65,6 @@ namespace Domino {
 
     public List<ulong> AddString(
         ulong parentViewId,
-        int parentId,
         float x,
         float y,
         int maxWide,
@@ -76,7 +75,7 @@ namespace Domino {
       foreach (var c in str) {
         newViewIds.Add(nextId++);
       }
-      messages.Add(new AddStringMessage(newViewIds, parentViewId, parentId, x, y, maxWide, color, fontName, str));
+      messages.Add(new AddStringMessage(newViewIds, parentViewId, x, y, maxWide, color, fontName, str));
       return newViewIds;
     }
 
@@ -88,7 +87,6 @@ namespace Domino {
 
     public ulong AddButton(
         ulong parentViewId,
-        int parentId,
         float x,
         float y,
         float width,
@@ -103,7 +101,7 @@ namespace Domino {
       ulong newViewId = nextId++;
       messages.Add(
           new AddButtonMessage(
-              newViewId, parentViewId, parentId, x, y, width, height, z, color, borderColor, pressedColor, onClicked,
+              newViewId, parentViewId, x, y, width, height, z, color, borderColor, pressedColor, onClicked,
               onMouseIn, onMouseOut));
       return newViewId;
     }
@@ -116,7 +114,6 @@ namespace Domino {
 
     public ulong AddRectangle(
         ulong parentViewId,
-        int parentId,
         float x,
         float y,
         float width,
@@ -126,13 +123,12 @@ namespace Domino {
         Color borderColor) {
       ulong newViewId = nextId++;
       messages.Add(
-          new AddRectangleMessage(newViewId, parentViewId, parentId, x, y, width, height, z, color, borderColor));
+          new AddRectangleMessage(newViewId, parentViewId, x, y, width, height, z, color, borderColor));
       return newViewId;
     }
 
     public ulong AddSymbol(
         ulong parentViewId,
-        int parentId,
         float x,
         float y,
         float size,
@@ -141,7 +137,7 @@ namespace Domino {
         SymbolId symbol,
         bool centered) {
       ulong newViewId = nextId++;
-      messages.Add(new AddSymbolMessage(newViewId, parentViewId, parentId, x, y, size, z, color, symbol, centered));
+      messages.Add(new AddSymbolMessage(newViewId, parentViewId, x, y, size, z, color, symbol, centered));
       return newViewId;
     }
     

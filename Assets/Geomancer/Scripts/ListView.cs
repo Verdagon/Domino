@@ -42,7 +42,7 @@ namespace Geomancer {
 
         for (int i = 0; i < entries.Count; i++) {
           // view.AddSymbol(0, 1, view.symbolsHigh - (i * 2 + 2), 2.0f, 0, new UnityEngine.Color(1, 1, 1), entries[i].symbol);
-          domino.AddString(viewId, 0, 5, viewGH - (i * 2 + 2 - 0.5f), viewGW - 3, new UnityEngine.Color(1, 1, 1), Fonts.PROSE_OVERLAY_FONT, entries[i].text);
+          domino.AddString(viewId, 5, viewGH - (i * 2 + 2 - 0.5f), viewGW - 3, new UnityEngine.Color(1, 1, 1), Fonts.PROSE_OVERLAY_FONT, entries[i].text);
         }
       }
     }

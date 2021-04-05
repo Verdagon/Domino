@@ -15,6 +15,7 @@ public class Root : MonoBehaviour {
   private Loader loader;
   private DominoToGameConnection server;
   private TerrainPresenter terrainPresenter;
+  private PanelPresenter panelPresenter;
 
   // public so we can see it in the unity editor
   public bool finishedStartMethod = false;
@@ -33,6 +34,7 @@ public class Root : MonoBehaviour {
     clock = new SlowableTimerClock(1.0f);
 
     overlayPaneler = new OverlayPaneler(canvas.gameObject, loader, clock);
+    panelPresenter = new PanelPresenter(clock, clock, loader, overlayPaneler, server);
 
     cameraController =
         new CameraController(
@@ -43,9 +45,6 @@ public class Root : MonoBehaviour {
 
     server.Start(overlayPaneler.screenGW, overlayPaneler.screenGH);
     // start here
-
-    Pattern pattern = null;
-    TileShapeMeshCache tileShapeMeshCache = null;
 
     finishedStartMethod = true;
   }
@@ -67,6 +66,12 @@ public class Root : MonoBehaviour {
           message is SetSurfaceColorMessage ||
           message is SetCliffColorMessage) {
         terrainPresenter.HandleMessage(message);
+      } else if (message is MakePanelMessage ||
+          message is ScheduleCloseMessage ||
+          message is AddRectangleMessage ||
+          message is AddStringMessage ||
+          message is AddSymbolMessage) {
+        panelPresenter.HandleMessage(message);
       } else {
         Debug.LogWarning("Ignoring: " + message.GetType().Name);
       }

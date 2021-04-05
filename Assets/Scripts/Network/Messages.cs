@@ -64,9 +64,9 @@ namespace Domino {
 
   class ScheduleCloseMessage : IDominoMessage {
     public readonly ulong viewId;
-    public readonly ulong startMsFromNow;
+    public readonly long startMsFromNow;
 
-    public ScheduleCloseMessage(ulong viewId, ulong startMsFromNow) {
+    public ScheduleCloseMessage(ulong viewId, long startMsFromNow) {
       this.viewId = viewId;
       this.startMsFromNow = startMsFromNow;
     }
@@ -117,7 +117,6 @@ namespace Domino {
   class AddStringMessage : IDominoMessage {
     public readonly List<ulong> newViewsIds;
     public readonly ulong parentViewId;
-    public readonly int parentId;
     public readonly float x;
     public readonly float y;
     public readonly int maxWide;
@@ -128,7 +127,6 @@ namespace Domino {
     public AddStringMessage(
         List<ulong> newViewsIds,
         ulong parentViewId,
-        int parentId,
         float x,
         float y,
         int maxWide,
@@ -137,7 +135,6 @@ namespace Domino {
         string str) {
       this.newViewsIds = newViewsIds;
       this.parentViewId = parentViewId;
-      this.parentId = parentId;
       this.x = x;
       this.y = y;
       this.maxWide = maxWide;
@@ -164,7 +161,6 @@ namespace Domino {
   class AddButtonMessage : IDominoMessage {
     public readonly ulong newViewId;
     public readonly ulong parentViewId;
-    public readonly int parentId;
     public readonly float x;
     public readonly float y;
     public readonly float width;
@@ -180,7 +176,6 @@ namespace Domino {
     public AddButtonMessage(
         ulong newViewId,
         ulong parentViewId,
-        int parentId,
         float x,
         float y,
         float width,
@@ -194,7 +189,6 @@ namespace Domino {
         ulong onMouseOut) {
       this.newViewId = newViewId;
       this.parentViewId = parentViewId;
-      this.parentId = parentId;
       this.x = x;
       this.y = y;
       this.width = width;
@@ -224,7 +218,6 @@ namespace Domino {
   class AddRectangleMessage : IDominoMessage {
     public readonly ulong newViewId;
     public readonly ulong parentViewId;
-    public readonly int parentId;
     public readonly float x;
     public readonly float y;
     public readonly float width;
@@ -236,7 +229,6 @@ namespace Domino {
     public AddRectangleMessage(
         ulong newViewId,
         ulong parentViewId,
-        int parentId,
         float x,
         float y,
         float width,
@@ -246,7 +238,6 @@ namespace Domino {
         Color borderColor) {
       this.newViewId = newViewId;
       this.parentViewId = parentViewId;
-      this.parentId = parentId;
       this.x = x;
       this.y = y;
       this.width = width;
@@ -260,7 +251,6 @@ namespace Domino {
   class AddSymbolMessage : IDominoMessage {
     public readonly ulong newViewId;
     public readonly ulong parentViewId;
-    public readonly int parentId;
     public readonly float x;
     public readonly float y;
     public readonly float size;
@@ -272,7 +262,6 @@ namespace Domino {
     public AddSymbolMessage(
         ulong newViewId,
         ulong parentViewId,
-        int parentId,
         float x,
         float y,
         float size,
@@ -282,7 +271,6 @@ namespace Domino {
         bool centered) {
       this.newViewId = newViewId;
       this.parentViewId = parentViewId;
-      this.parentId = parentId;
       this.x = x;
       this.y = y;
       this.size = size;
