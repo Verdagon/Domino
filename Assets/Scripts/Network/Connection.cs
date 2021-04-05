@@ -73,10 +73,9 @@ namespace Domino {
         string fontName,
         string str) {
       List<ulong> newViewIds = new List<ulong>();
-      foreach (var c in str) {
-        newViewIds.Add(nextId++);
+      for (int i = 0; i < str.Length; i++) {
+        newViewIds.Add(AddSymbol(parentViewId, x + i, y, 1, 1, color, new SymbolId(fontName, char.ConvertToUtf32(str[i].ToString(), 0)), true));
       }
-      messages.Add(new AddStringMessage(newViewIds, parentViewId, x, y, maxWide, color, fontName, str));
       return newViewIds;
     }
 
@@ -101,11 +100,11 @@ namespace Domino {
       return newViewId;
     }
 
-    public ulong AddFullscreenRect(ulong parentViewId, Color color) {
-      ulong newViewId = nextId++;
-      messages.Add(new AddFullscreenRectMessage(newViewId, parentViewId, color));
-      return newViewId;
-    }
+    // public ulong AddFullscreenRect(ulong parentViewId, Color color) {
+    //   ulong newViewId = nextId++;
+    //   messages.Add(new AddFullscreenRectMessage(newViewId, parentViewId, color));
+    //   return newViewId;
+    // }
 
     public ulong AddRectangle(
         ulong parentViewId,

@@ -114,38 +114,38 @@ namespace Domino {
     }
   }
 
-  class AddStringMessage : IDominoMessage {
-    public readonly List<ulong> newViewsIds;
-    // public readonly int panelId;
-    public readonly ulong parentViewId;
-    public readonly float x;
-    public readonly float y;
-    public readonly int maxWide;
-    public readonly Color color;
-    public readonly string fontName;
-    public readonly string str;
-
-    public AddStringMessage(
-        List<ulong> newViewsIds,
-        // int panelId,
-        ulong parentViewId,
-        float x,
-        float y,
-        int maxWide,
-        Color color,
-        string fontName,
-        string str) {
-      this.newViewsIds = newViewsIds;
-      // this.panelId = panelId;
-      this.parentViewId = parentViewId;
-      this.x = x;
-      this.y = y;
-      this.maxWide = maxWide;
-      this.color = color;
-      this.fontName = fontName;
-      this.str = str;
-    }
-  }
+  // class AddStringMessage : IDominoMessage {
+  //   public readonly List<ulong> newViewsIds;
+  //   // public readonly int panelId;
+  //   public readonly ulong parentViewId;
+  //   public readonly float x;
+  //   public readonly float y;
+  //   public readonly int maxWide;
+  //   public readonly Color color;
+  //   public readonly string fontName;
+  //   public readonly string str;
+  //
+  //   public AddStringMessage(
+  //       List<ulong> newViewsIds,
+  //       // int panelId,
+  //       ulong parentViewId,
+  //       float x,
+  //       float y,
+  //       int maxWide,
+  //       Color color,
+  //       string fontName,
+  //       string str) {
+  //     this.newViewsIds = newViewsIds;
+  //     // this.panelId = panelId;
+  //     this.parentViewId = parentViewId;
+  //     this.x = x;
+  //     this.y = y;
+  //     this.maxWide = maxWide;
+  //     this.color = color;
+  //     this.fontName = fontName;
+  //     this.str = str;
+  //   }
+  // }
 
   // class AddBackgroundMessage : IDominoMessage {
   //   public readonly ulong newViewId;

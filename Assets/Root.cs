@@ -70,7 +70,7 @@ public class Root : MonoBehaviour {
       } else if (message is MakePanelMessage ||
           message is ScheduleCloseMessage ||
           message is AddRectangleMessage ||
-          message is AddStringMessage ||
+          // message is AddStringMessage ||
           message is AddSymbolMessage ||
           message is RemoveViewMessage ||
           message is SetFadeInMessage ||

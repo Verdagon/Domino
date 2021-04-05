@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using Domino;
 using Geomancer.Model;
+using UnityEngine;
+using Terrain = Geomancer.Model.Terrain;
 
 namespace Geomancer {
   class MemberStuff {
@@ -134,6 +136,10 @@ namespace Geomancer {
             allLocations.Add(locationAndTile.Key);
           }
           SetSelection(allLocations);
+          break;
+        case 'z':
+          var panelId = domino.MakePanel(-1, -1, screenGW + 2, screenGH + 2);
+          domino.AddRectangle(panelId, 0, 0, screenGW + 2, screenGH + 2, 0, Color.black, Color.black);
           break;
         case '=':
         case '+':

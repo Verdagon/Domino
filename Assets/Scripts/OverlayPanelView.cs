@@ -392,12 +392,6 @@ namespace Domino {
     //  return borderId;
     //}
 
-    public void AddString(List<ulong> ids, ulong parentId, float x, float y, int maxWide, Color color, string fontName, string str) {
-      for (int i = 0; i < str.Length; i++) {
-        AddSymbol(ids[i], parentId, x + i, y, 1f, 1, color, new SymbolId(fontName, char.ConvertToUtf32(str[i].ToString(), 0)));
-      }
-    }
-
     public void Update() {
       if (loader == null) {
         // We aren't initialized yet

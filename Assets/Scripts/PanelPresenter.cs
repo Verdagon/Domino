@@ -86,27 +86,27 @@ namespace Geomancer {
             addRectangle.color,
             addRectangle.color);
         viewIdToPanelId.Add(addRectangle.newViewId, panelId);
-      } else if (message is AddStringMessage addString) {
-        Debug.Log(
-            $"AddString newViewIds ... parentViewId {addString.parentViewId} x {addString.x} y {addString.y} maxWide {addString.maxWide} color {addString.color} fontName {addString.fontName} str {addString.str}");
-        
-        var panelId = viewIdToPanelId[addString.parentViewId];
-        var panel = idToPanel[panelId];
-        panel.AddString(
-            addString.newViewsIds,
-            addString.parentViewId,
-            addString.x,
-            addString.y,
-            addString.maxWide,
-            addString.color,
-            addString.fontName,
-            addString.str);
-        foreach (var newViewId in addString.newViewsIds) {
-          viewIdToPanelId.Add(newViewId, panelId);
-        }
+      // } else if (message is AddStringMessage addString) {
+      //   Debug.Log(
+      //       $"AddString newViewIds ... parentViewId {addString.parentViewId} x {addString.x} y {addString.y} maxWide {addString.maxWide} color {addString.color} fontName {addString.fontName} str {addString.str}");
+      //   
+      //   var panelId = viewIdToPanelId[addString.parentViewId];
+      //   var panel = idToPanel[panelId];
+      //   panel.AddString(
+      //       addString.newViewsIds,
+      //       addString.parentViewId,
+      //       addString.x,
+      //       addString.y,
+      //       addString.maxWide,
+      //       addString.color,
+      //       addString.fontName,
+      //       addString.str);
+      //   foreach (var newViewId in addString.newViewsIds) {
+      //     viewIdToPanelId.Add(newViewId, panelId);
+      //   }
       } else if (message is AddSymbolMessage addSymbol) {
         Debug.Log(
-            $"AddString newViewId {addSymbol.newViewId} parentViewId {addSymbol.parentViewId} x {addSymbol.x} y {addSymbol.y} size {addSymbol.size} z {addSymbol.z} color {addSymbol.color} symbol {addSymbol.symbol} centered {addSymbol.centered}");
+            $"AddSymbol newViewId {addSymbol.newViewId} parentViewId {addSymbol.parentViewId} x {addSymbol.x} y {addSymbol.y} size {addSymbol.size} z {addSymbol.z} color {addSymbol.color} symbol {addSymbol.symbol} centered {addSymbol.centered}");
         
         var panelId = viewIdToPanelId[addSymbol.parentViewId];
         var panel = idToPanel[panelId];
