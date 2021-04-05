@@ -115,8 +115,8 @@ namespace Geomancer {
     }
 
     public void SetHoveredLocation(ulong tileViewId, Location newMaybeHoveredLocation) {
-      HandleTerrainTileHovered(newMaybeHoveredLocation);
       terrainPresenter.SetHoveredLocation(newMaybeHoveredLocation);
+      HandleTerrainTileHovered(newMaybeHoveredLocation);
     }
 
     public void LocationMouseDown(ulong tileViewId, Location location) {

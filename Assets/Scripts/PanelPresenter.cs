@@ -49,6 +49,7 @@ namespace Geomancer {
 
     public void HandleMessage(IDominoMessage message) {
       if (message is MakePanelMessage makePanel) {
+        Debug.Log($"MakePanel id {makePanel.id} gx {makePanel.panelGXInScreen} gy {makePanel.panelGYInScreen} gw {makePanel.panelGW} gh {makePanel.panelGH}");
         int newPanelId = (int) makePanel.id;
         var newPanel =
             overlayPaneler.MakePanel(
@@ -56,17 +57,22 @@ namespace Geomancer {
         idToPanel.Add(newPanelId, newPanel);
         viewIdToPanelId.Add(makePanel.id, newPanelId);
       } else if (message is RemoveViewMessage removeView) {
+        Debug.Log($"RemoveView viewId {removeView.viewId}");
         var panelId = viewIdToPanelId[removeView.viewId];
         var panel = idToPanel[panelId];
         panel.Remove(removeView.viewId);
         viewIdToPanelId.Remove(removeView.viewId);
       } else if (message is ScheduleCloseMessage scheduleClose) {
+        Debug.Log($"ScheduleClose viewId {scheduleClose.viewId} startMsFromNow {scheduleClose.startMsFromNow}");
         var panelId = viewIdToPanelId[scheduleClose.viewId];
         var panel = idToPanel[panelId];
         panel.ScheduleClose(scheduleClose.startMsFromNow);
         idToPanel.Remove(panelId);
         viewIdToPanelId.Remove(scheduleClose.viewId);
       } else if (message is AddRectangleMessage addRectangle) {
+        Debug.Log(
+            $"AddRectangle newViewId {addRectangle.newViewId} parentViewId {addRectangle.parentViewId} x {addRectangle.x} y {addRectangle.y} width {addRectangle.width} height {addRectangle.height} z {addRectangle.z} color {addRectangle.color} borderColor {addRectangle.borderColor}");
+    
         var panelId = viewIdToPanelId[addRectangle.parentViewId];
         var panel = idToPanel[panelId];
         panel.AddRectangle(
@@ -81,6 +87,9 @@ namespace Geomancer {
             addRectangle.color);
         viewIdToPanelId.Add(addRectangle.newViewId, panelId);
       } else if (message is AddStringMessage addString) {
+        Debug.Log(
+            $"AddString newViewIds ... parentViewId {addString.parentViewId} x {addString.x} y {addString.y} maxWide {addString.maxWide} color {addString.color} fontName {addString.fontName} str {addString.str}");
+        
         var panelId = viewIdToPanelId[addString.parentViewId];
         var panel = idToPanel[panelId];
         panel.AddString(
@@ -96,6 +105,9 @@ namespace Geomancer {
           viewIdToPanelId.Add(newViewId, panelId);
         }
       } else if (message is AddSymbolMessage addSymbol) {
+        Debug.Log(
+            $"AddString newViewId {addSymbol.newViewId} parentViewId {addSymbol.parentViewId} x {addSymbol.x} y {addSymbol.y} size {addSymbol.size} z {addSymbol.z} color {addSymbol.color} symbol {addSymbol.symbol} centered {addSymbol.centered}");
+        
         var panelId = viewIdToPanelId[addSymbol.parentViewId];
         var panel = idToPanel[panelId];
         panel.AddSymbol(
@@ -108,6 +120,16 @@ namespace Geomancer {
             addSymbol.color,
             addSymbol.symbol);
         viewIdToPanelId.Add(addSymbol.newViewId, panelId);
+      } else if (message is SetFadeInMessage fadeIn) {
+        Debug.Log($"SetFadeIn id {fadeIn.id} fadeIn ...");
+        var panelId = viewIdToPanelId[fadeIn.id];
+        var panel = idToPanel[panelId];
+        panel.SetFadeIn(fadeIn.id, fadeIn.fadeIn);
+      } else if (message is SetFadeOutMessage fadeOut) {
+        Debug.Log($"SetFadeOut id {fadeOut.id} fadeOut ...");
+        var panelId = viewIdToPanelId[fadeOut.id];
+        var panel = idToPanel[panelId];
+        panel.SetFadeOut(fadeOut.id, fadeOut.fadeOut);
       } else {
         Asserts.Assert(false);
       }

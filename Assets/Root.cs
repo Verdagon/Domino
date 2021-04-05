@@ -72,7 +72,9 @@ public class Root : MonoBehaviour {
           message is AddRectangleMessage ||
           message is AddStringMessage ||
           message is AddSymbolMessage ||
-          message is RemoveViewMessage) {
+          message is RemoveViewMessage ||
+          message is SetFadeInMessage ||
+          message is SetFadeOutMessage) {
         panelPresenter.HandleMessage(message);
       } else {
         Debug.LogWarning("Ignoring: " + message.GetType().Name);

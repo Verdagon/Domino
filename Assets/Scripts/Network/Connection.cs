@@ -17,14 +17,15 @@ namespace Domino {
       server = new EditorServer(this);
     }
 
-    public Panel MakePanel(
+    public ulong MakePanel(
         int panelGXInScreen,
         int panelGYInScreen,
         int panelGW,
         int panelGH) {
       ulong id = nextId++;
       messages.Add(new MakePanelMessage(id, panelGXInScreen, panelGYInScreen, panelGW, panelGH));
-      return new Panel(this, id, panelGW, panelGH);
+      return id;
+      // return new Panel(this, id, panelGW, panelGH);
     }
 
     public ulong CreateTile(InitialTile initialTile) {
@@ -47,8 +48,8 @@ namespace Domino {
       messages.Add(new ScheduleCloseMessage(viewId, startMsFromNow));
     }
 
-    public void RemoveView(ulong panelId, ulong viewId) {
-      messages.Add(new RemoveViewMessage(panelId, viewId));
+    public void RemoveView(ulong viewId) {
+      messages.Add(new RemoveViewMessage(viewId));
     }
 
     public void SetOpacity(ulong viewId, int id, float ratio) {

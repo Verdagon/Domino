@@ -73,11 +73,11 @@ namespace Domino {
   }
 
   class RemoveViewMessage : IDominoMessage {
-    public readonly ulong panelId;
+    // public readonly ulong panelId;
     public readonly ulong viewId;
 
-    public RemoveViewMessage(ulong panelId, ulong viewId) {
-      this.panelId = panelId;
+    public RemoveViewMessage(ulong viewId) {
+      // this.panelId = panelId;
       this.viewId = viewId;
     }
   }
@@ -116,7 +116,7 @@ namespace Domino {
 
   class AddStringMessage : IDominoMessage {
     public readonly List<ulong> newViewsIds;
-    public readonly int panelId;
+    // public readonly int panelId;
     public readonly ulong parentViewId;
     public readonly float x;
     public readonly float y;
@@ -127,7 +127,7 @@ namespace Domino {
 
     public AddStringMessage(
         List<ulong> newViewsIds,
-        int panelId,
+        // int panelId,
         ulong parentViewId,
         float x,
         float y,
@@ -136,7 +136,7 @@ namespace Domino {
         string fontName,
         string str) {
       this.newViewsIds = newViewsIds;
-      this.panelId = panelId;
+      // this.panelId = panelId;
       this.parentViewId = parentViewId;
       this.x = x;
       this.y = y;
@@ -163,7 +163,7 @@ namespace Domino {
 
   class AddButtonMessage : IDominoMessage {
     public readonly ulong newViewId;
-    public readonly int panelId;
+    // public readonly int panelId;
     public readonly ulong parentViewId;
     public readonly float x;
     public readonly float y;
@@ -179,7 +179,7 @@ namespace Domino {
 
     public AddButtonMessage(
         ulong newViewId,
-        int panelId,
+        // int panelId,
         ulong parentViewId,
         float x,
         float y,
@@ -193,7 +193,7 @@ namespace Domino {
         ulong onMouseIn,
         ulong onMouseOut) {
       this.newViewId = newViewId;
-      this.panelId = panelId;
+      // this.panelId = panelId;
       this.parentViewId = parentViewId;
       this.x = x;
       this.y = y;
