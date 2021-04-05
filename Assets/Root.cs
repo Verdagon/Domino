@@ -64,13 +64,15 @@ public class Root : MonoBehaviour {
         // setupGame.cameraPosition;
       } else if (message is CreateTileMessage ||
           message is SetSurfaceColorMessage ||
-          message is SetCliffColorMessage) {
+          message is SetCliffColorMessage ||
+          message is DestroyTileMessage) {
         terrainPresenter.HandleMessage(message);
       } else if (message is MakePanelMessage ||
           message is ScheduleCloseMessage ||
           message is AddRectangleMessage ||
           message is AddStringMessage ||
-          message is AddSymbolMessage) {
+          message is AddSymbolMessage ||
+          message is RemoveViewMessage) {
         panelPresenter.HandleMessage(message);
       } else {
         Debug.LogWarning("Ignoring: " + message.GetType().Name);

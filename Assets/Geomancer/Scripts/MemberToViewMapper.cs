@@ -98,6 +98,10 @@ namespace Geomancer {
             surfaceColor: [100, 32, 0],
             wallColor: [64, 25, 0],
           },
+          mud: {
+            surfaceColor: [50, 16, 0],
+            wallColor: [32, 12, 0],
+          },
           rocks: {
             overlay: {
               symbol: {font: ""AthSymbols"", char: 102},
@@ -258,7 +262,7 @@ namespace Geomancer {
         int green = ExpectInteger(arr[1], "Color array element 0 not an integer!");
         int blue = ExpectInteger(arr[2], "Color array element 0 not an integer!");
         int alpha = arr.Count == 4 ? ExpectInteger(arr[2], "Color array element 0 not an integer!") : 255;
-        return new ConstantVector4Animation(new Vector4(red, green, blue, alpha));
+        return new ConstantVector4Animation(new Vector4(red / 255.0f, green / 255.0f, blue / 255.0f, alpha / 255.0f));
       } else {
         throw new Exception("Expected an array for a color!");
       }

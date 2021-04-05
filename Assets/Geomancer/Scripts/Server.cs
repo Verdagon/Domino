@@ -6,27 +6,27 @@ using Geomancer.Model;
 
 namespace Geomancer {
   class MemberStuff {
-    public Dictionary<char, string> memberByKeyCode = new Dictionary<char, string>() {
-      ['b'] = "Fire",
-      ['g'] = "Grass",
-      ['m'] = "Mud",
-      ['d'] = "Dirt",
-      ['r'] = "Rocks",
-      ['o'] = "Obsidian",
-      ['s'] = "DarkRocks",
-      ['x'] = "Marker",
-      ['c'] = "Cave",
-      ['f'] = "Floor",
-      ['t'] = "Tree",
-      ['l'] = "Magma",
-      ['h'] = "HealthPotion",
-      ['p'] = "ManaPotion",
-      ['w'] = "CaveWall",
-      ['z'] = "ObsidianFloor",
-      ['v'] = "Avelisk",
-      ['z'] = "Zeddy",
-      ['#'] = "Wall",
-      ['`'] = "Water",
+    public static Dictionary<char, string> memberByKeyCode = new Dictionary<char, string>() {
+      ['b'] = "fire",
+      ['g'] = "grass",
+      ['m'] = "mud",
+      ['d'] = "dirt",
+      ['r'] = "rocks",
+      ['o'] = "obsidian",
+      ['s'] = "dark_rocks",
+      ['x'] = "marker",
+      ['c'] = "cave",
+      ['f'] = "floor",
+      ['t'] = "tree",
+      ['l'] = "magma",
+      ['h'] = "health_potion",
+      ['p'] = "mana_potion",
+      ['w'] = "cave_wall",
+      ['z'] = "obsidian_floor",
+      ['v'] = "avelisk",
+      ['z'] = "zeddy",
+      ['#'] = "wall",
+      ['`'] = "water",
     };
   }
   
@@ -38,7 +38,6 @@ namespace Geomancer {
     private int screenGH = 0;
     private Terrain terrain;
     private LookPanelView lookPanelView;
-    private Dictionary<char, string> memberByKeyCode;
     TerrainController terrainPresenter;
     private SortedSet<Location> selectedLocations = new SortedSet<Location>();
     private ListView membersView;
@@ -105,25 +104,23 @@ namespace Geomancer {
       
       domino.SetupGame(cameraLookAtPosition, elevationStepHeight * ModelExtensions.ModelToUnityMultiplier, pattern);
 
-      membersView = new ListView(domino, domino.MakePanel(0, 0, 40, 16), 40, 16);
+      membersView = new ListView(domino, 0, 0, 40, 16);
       lookPanelView = new LookPanelView(domino, screenGW, -1, 2);
 
       vivimap = MemberToViewMapper.LoadMap("vivimap.txt");
       terrainPresenter = new TerrainController(domino, vivimap, terrain);
+      terrainPresenter.PhantomTileClicked += HandlePhantomTileClicked;
+      terrainPresenter.TerrainTileClicked += HandleTerrainTileClicked;
+      terrainPresenter.TerrainTileHovered += HandleTerrainTileHovered;
     }
 
     public void SetHoveredLocation(ulong tileViewId, Location newMaybeHoveredLocation) {
       HandleTerrainTileHovered(newMaybeHoveredLocation);
       terrainPresenter.SetHoveredLocation(newMaybeHoveredLocation);
     }
-    
-    //
-    // public void LocationMouseOut(ulong tileViewId, Location location) {
-    //   HandleTerrainTileHovered(null);
-    // }
-    
+
     public void LocationMouseDown(ulong tileViewId, Location location) {
-      
+      terrainPresenter.LocationMouseDown(tileViewId, location);
     }
 
     public void KeyDown(int c, bool leftShiftDown, bool rightShiftDown, bool ctrlDown, bool leftAltDown, bool rightAltDown) {
@@ -169,7 +166,7 @@ namespace Geomancer {
           break;
       }
 
-      foreach (var keyCodeAndMember in memberByKeyCode) {
+      foreach (var keyCodeAndMember in MemberStuff.memberByKeyCode) {
         if (c == keyCodeAndMember.Key) {
           bool addKeyDown = rightAltDown;
           bool removeKeyDown = leftAltDown;

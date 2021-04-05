@@ -59,6 +59,9 @@ namespace Geomancer {
             createTile.id,
             new NetworkTilePresenter(
                 loader, clock, timer, tileShapeMeshCache, elevationStepHeight, pattern, createTile.id, createTile.initialTile));
+      } else if (message is DestroyTileMessage destroyTile) {
+        tilePresenters[destroyTile.tileViewId].Destroy();
+        tilePresenters.Remove(destroyTile.tileViewId);
       } else if (message is SetSurfaceColorMessage setSurfaceColor) {
         tilePresenters[setSurfaceColor.tileViewId].HandleMessage(message);
       } else if (message is SetCliffColorMessage setCliffColor) {

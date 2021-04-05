@@ -55,6 +55,11 @@ namespace Geomancer {
                 makePanel.id, makePanel.panelGXInScreen, makePanel.panelGYInScreen, makePanel.panelGW, makePanel.panelGH);
         idToPanel.Add(newPanelId, newPanel);
         viewIdToPanelId.Add(makePanel.id, newPanelId);
+      } else if (message is RemoveViewMessage removeView) {
+        var panelId = viewIdToPanelId[removeView.viewId];
+        var panel = idToPanel[panelId];
+        panel.Remove(removeView.viewId);
+        viewIdToPanelId.Remove(removeView.viewId);
       } else if (message is ScheduleCloseMessage scheduleClose) {
         var panelId = viewIdToPanelId[scheduleClose.viewId];
         var panel = idToPanel[panelId];
@@ -74,6 +79,7 @@ namespace Geomancer {
             addRectangle.z,
             addRectangle.color,
             addRectangle.color);
+        viewIdToPanelId.Add(addRectangle.newViewId, panelId);
       } else if (message is AddStringMessage addString) {
         var panelId = viewIdToPanelId[addString.parentViewId];
         var panel = idToPanel[panelId];
@@ -86,6 +92,9 @@ namespace Geomancer {
             addString.color,
             addString.fontName,
             addString.str);
+        foreach (var newViewId in addString.newViewsIds) {
+          viewIdToPanelId.Add(newViewId, panelId);
+        }
       } else if (message is AddSymbolMessage addSymbol) {
         var panelId = viewIdToPanelId[addSymbol.parentViewId];
         var panel = idToPanel[panelId];
@@ -98,6 +107,7 @@ namespace Geomancer {
             addSymbol.z,
             addSymbol.color,
             addSymbol.symbol);
+        viewIdToPanelId.Add(addSymbol.newViewId, panelId);
       } else {
         Asserts.Assert(false);
       }

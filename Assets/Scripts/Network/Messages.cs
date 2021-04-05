@@ -72,13 +72,13 @@ namespace Domino {
     }
   }
 
-  class RemoveMessage : IDominoMessage {
+  class RemoveViewMessage : IDominoMessage {
+    public readonly ulong panelId;
     public readonly ulong viewId;
-    public readonly int id;
 
-    public RemoveMessage(ulong viewId, int id) {
+    public RemoveViewMessage(ulong panelId, ulong viewId) {
+      this.panelId = panelId;
       this.viewId = viewId;
-      this.id = id;
     }
   }
 
@@ -116,6 +116,7 @@ namespace Domino {
 
   class AddStringMessage : IDominoMessage {
     public readonly List<ulong> newViewsIds;
+    public readonly int panelId;
     public readonly ulong parentViewId;
     public readonly float x;
     public readonly float y;
@@ -126,6 +127,7 @@ namespace Domino {
 
     public AddStringMessage(
         List<ulong> newViewsIds,
+        int panelId,
         ulong parentViewId,
         float x,
         float y,
@@ -134,6 +136,7 @@ namespace Domino {
         string fontName,
         string str) {
       this.newViewsIds = newViewsIds;
+      this.panelId = panelId;
       this.parentViewId = parentViewId;
       this.x = x;
       this.y = y;
@@ -144,22 +147,23 @@ namespace Domino {
     }
   }
 
-  class AddBackgroundMessage : IDominoMessage {
-    public readonly ulong newViewId;
-    public readonly ulong parentViewId;
-    public readonly Color color;
-    public readonly Color borderColor;
-
-    public AddBackgroundMessage(ulong newViewId, ulong parentViewId, Color color, Color borderColor) {
-      this.newViewId = newViewId;
-      this.parentViewId = parentViewId;
-      this.color = color;
-      this.borderColor = borderColor;
-    }
-  }
+  // class AddBackgroundMessage : IDominoMessage {
+  //   public readonly ulong newViewId;
+  //   public readonly ulong parentViewId;
+  //   public readonly Color color;
+  //   public readonly Color borderColor;
+  //
+  //   public AddBackgroundMessage(ulong newViewId, ulong parentViewId, Color color, Color borderColor) {
+  //     this.newViewId = newViewId;
+  //     this.parentViewId = parentViewId;
+  //     this.color = color;
+  //     this.borderColor = borderColor;
+  //   }
+  // }
 
   class AddButtonMessage : IDominoMessage {
     public readonly ulong newViewId;
+    public readonly int panelId;
     public readonly ulong parentViewId;
     public readonly float x;
     public readonly float y;
@@ -175,6 +179,7 @@ namespace Domino {
 
     public AddButtonMessage(
         ulong newViewId,
+        int panelId,
         ulong parentViewId,
         float x,
         float y,
@@ -188,6 +193,7 @@ namespace Domino {
         ulong onMouseIn,
         ulong onMouseOut) {
       this.newViewId = newViewId;
+      this.panelId = panelId;
       this.parentViewId = parentViewId;
       this.x = x;
       this.y = y;

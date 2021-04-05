@@ -381,10 +381,10 @@ namespace Domino {
 
       overlayObject.buttonPressedColor = pressedColor;
     }
-
-    public void AddBackground(ulong newiewId, Color color, Color borderColor) {
-      AddRectangle(newiewId, rootId, 0, 0, symbolsWide, symbolsHigh, 1, color, borderColor);
-    }
+    //
+    // public void AddBackground(ulong newiewId, Color color, Color borderColor) {
+    //   AddRectangle(newiewId, rootId, 0, 0, symbolsWide, symbolsHigh, 1, color, borderColor);
+    // }
 
     //public ulong AddBackgroundAndBorder(Color backgroundColor, Color borderColor) {
     //  int borderId = AddBackground(borderColor);
