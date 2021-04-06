@@ -11,22 +11,39 @@ namespace Domino {
     private Camera cameraObject;
     // Where it's supposed to be, after all the animations are done.
     private Vector3 cameraEndLookAtPosition;
-    private Vector3 cameraOffsetToLookAt;
+    public Vector3 lookatOffsetToCamera { get; private set; }
 
     private readonly static float cameraSpeedPerSecond = 8.0f;
 
-    public CameraController(IClock clock, Camera cameraObject, Vector3 initialLookAtPosition, Vector3 initialCameraOffsetToLookAt) {
+    public CameraController(IClock clock, Camera cameraObject, Vector3 initialLookAtPosition, Vector3 initiallookatOffsetToCamera) {
       this.clock = clock;
       this.cameraObject = cameraObject;
 
       cameraEndLookAtPosition = initialLookAtPosition;
-      cameraOffsetToLookAt = initialCameraOffsetToLookAt;
+      lookatOffsetToCamera = initiallookatOffsetToCamera;
 
       GetOrCreateCameraAnimator().lookAtAnimation = new ConstantVector3Animation(cameraEndLookAtPosition);
-      GetOrCreateCameraAnimator().offsetToLookAtAnimation = new ConstantVector3Animation(cameraOffsetToLookAt);
+      GetOrCreateCameraAnimator().lookatOffsetToCameraAnimation = new ConstantVector3Animation(lookatOffsetToCamera);
     }
 
+    public Vector3 GetCurrentLookatOffsetToCamera() {
+      var animator = cameraObject.GetComponent<CameraAnimator>();
+      if (animator == null) {
+        return lookatOffsetToCamera;
+      } else {
+        return animator.lookatOffsetToCameraAnimation.Get(clock.GetTimeMs());
+      }
+    }
+    
     private CameraAnimator GetOrCreateCameraAnimator() {
+      // var animator =
+      //     Vec3Animator.MakeOrGetFrom(
+      //         clock,
+      //         cameraObject.gameObject,
+      //         lookatOffsetToCamera,
+      //         (vec) => {
+      //         });
+      
       var animator = cameraObject.GetComponent<CameraAnimator>();
       if (animator == null) {
         animator = cameraObject.gameObject.AddComponent<CameraAnimator>();
@@ -46,11 +63,11 @@ namespace Domino {
         animator.lookAtAnimation =
           new ConstantVector3Animation(new_offsetToLookAt);
       } else {
-        var currentCameraOffsetToLookAt = cameraOffsetToLookAt;
-        var offsetToLookAtDifference = new_offsetToLookAt - currentCameraOffsetToLookAt;
-        animator.offsetToLookAtAnimation =
+        var currentlookatOffsetToCamera = lookatOffsetToCamera;
+        var offsetToLookAtDifference = new_offsetToLookAt - currentlookatOffsetToCamera;
+        animator.lookatOffsetToCameraAnimation =
             new AddVector3Animation(
-                animator.offsetToLookAtAnimation,
+                animator.lookatOffsetToCameraAnimation,
                 new ClampVector3Animation(
                     clock.GetTimeMs(), clock.GetTimeMs() + durationMs,
                     new AddVector3Animation(
@@ -58,7 +75,7 @@ namespace Domino {
                         new LinearVector3Animation(
                             clock.GetTimeMs(), clock.GetTimeMs() + durationMs, -offsetToLookAtDifference, new Vector3(0, 0, 0)))));
       }
-      cameraOffsetToLookAt = new_offsetToLookAt;
+      lookatOffsetToCamera = new_offsetToLookAt;
     }
 
     public void StartMovingCameraTo(Vector3 newCameraEndLookAtPosition, long durationMs) {
@@ -81,7 +98,7 @@ namespace Domino {
       }
       cameraEndLookAtPosition = newCameraEndLookAtPosition;
     }
-
+    
     public void MoveIn(float deltaTime) {
       var newEndLookAtPosition =
           cameraEndLookAtPosition +

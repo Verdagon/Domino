@@ -14,7 +14,10 @@ public class Root : MonoBehaviour {
   private SlowableTimerClock clock;
   private Loader loader;
   private DominoToGameConnection server;
+  private Pattern pattern;
+  private float elevationStepHeight;
   private TerrainPresenter terrainPresenter;
+  private UnitsPresenter unitsPresenter;
   private PanelPresenter panelPresenter;
 
   // public so we can see it in the unity editor
@@ -40,7 +43,7 @@ public class Root : MonoBehaviour {
         new CameraController(
             clock,
             camera,
-            new Vector3(0, 0, 0), //terrain.GetTileCenter(startLocation).ToUnity(),
+            new Vector3(0, 0, 0),
             new Vector3(0, -10, 5));
 
     server.Start(overlayPaneler.screenGW, overlayPaneler.screenGH);
@@ -58,34 +61,45 @@ public class Root : MonoBehaviour {
     var messages = server.TakeMessages();
     foreach (var message in messages) {
       if (message is SetupGameMessage setupGame) {
-        terrainPresenter =
-            new TerrainPresenter(
-                server, clock, clock, loader, setupGame.pattern, setupGame.elevationStepHeight);
+        Debug.Log(
+            $"SetupGameMessage cameraPosition {setupGame.cameraPosition.ToUnity()} lookatOffsetToCamera {setupGame.lookatOffsetToCamera.ToUnity()} elevationStepHeight {setupGame.elevationStepHeight} pattern {setupGame.pattern}");
+        cameraController.StartRotatingCameraTo(setupGame.lookatOffsetToCamera.ToUnity(), 1000);
+        elevationStepHeight = setupGame.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier;
+        pattern = setupGame.pattern;
+        terrainPresenter = new TerrainPresenter(server, clock, clock, loader, pattern, elevationStepHeight);
+        unitsPresenter = new UnitsPresenter(
+            server, clock, clock, loader, pattern, cameraController.lookatOffsetToCamera, elevationStepHeight);
         // setupGame.cameraPosition;
       } else if (message is CreateTileMessage ||
           message is SetSurfaceColorMessage ||
           message is SetCliffColorMessage ||
           message is DestroyTileMessage) {
         terrainPresenter.HandleMessage(message);
-      } else if (message is CreateUnitMessage) {
-        UnitView.Create(
-            loader, clock, clock, new Vector3(10, 0, 0),
-            new UnitDescription(
-                new DominoDescription(true, Vector4Animation.RED),
-                new ExtrudedSymbolDescription(
-                    RenderPriority.DOMINO,
-                    new SymbolDescription(
-                        new SymbolId("AthSymbols", 0x006A),
-                        Vector4Animation.BLUE,
-                        0,
-                        0,
-                        OutlineMode.WithOutline),
-                    true,
-                    Vector4Animation.PINK),
-                new List<(ulong, ExtrudedSymbolDescription)>(),
-                1,
-                1),
-            new Vector3(0, -1, 0));
+      } else if (message is CreateUnitMessage ||
+          message is DestroyUnitMessage) {
+        unitsPresenter.HandleMessage(message);
+        
+        // var location = createUnit.initialUnit.location;
+        // var position = pattern.GetTileCenter(location).ToVec3().ToUnity();
+        // position.y += createUnit.initialUnit.elevation * elevationStepHeight;
+        // UnitView.Create(
+        //     loader, clock, clock, position,
+        //     new UnitDescription(
+        //         new DominoDescription(true, Vector4Animation.RED),
+        //         new ExtrudedSymbolDescription(
+        //             RenderPriority.DOMINO,
+        //             new SymbolDescription(
+        //                 new SymbolId("AthSymbols", 0x006A),
+        //                 Vector4Animation.BLUE,
+        //                 0,
+        //                 0,
+        //                 OutlineMode.WithOutline),
+        //             true,
+        //             Vector4Animation.PINK),
+        //         new List<(ulong, ExtrudedSymbolDescription)>(),
+        //         1,
+        //         1),
+        //     new Vector3(0, -1, 0));
       } else if (message is MakePanelMessage ||
           message is ScheduleCloseMessage ||
           message is AddRectangleMessage ||
@@ -122,6 +136,20 @@ public class Root : MonoBehaviour {
     if (Input.GetKey(KeyCode.LeftArrow)) {
       cameraController.MoveLeft(Time.deltaTime);
     }
+    
+    if (Input.GetKeyDown(KeyCode.Backslash)) {
+      cameraController.StartRotatingCameraTo(
+          Quaternion.Euler(0, 30, 0) * cameraController.lookatOffsetToCamera,
+          200);
+      // unitsPresenter.SetCameraDirection(cameraController.lookatOffsetToCamera);
+    }
+    if (Input.GetKeyDown(KeyCode.Slash)) {
+      cameraController.StartRotatingCameraTo(
+          Quaternion.Euler(0, -30, 0) * cameraController.lookatOffsetToCamera,
+          200);
+    }
+    
+    unitsPresenter.SetCameraDirection(cameraController.GetCurrentLookatOffsetToCamera());
 
     bool ctrlDown = Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.RightControl);
     bool leftAltDown = Input.GetKeyDown(KeyCode.LeftAlt);

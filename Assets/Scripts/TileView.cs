@@ -325,7 +325,7 @@ namespace Domino {
 
     private void RefreshSurfaceColor() {
       var animator = Vec4Animator.MakeOrGetFrom(
-          clock, gameObject, (vec4) => {
+          clock, gameObject, new Vector4(0, 0, 0, 1), (vec4) => {
             foreach (var groundGameObject in groundGameObjects) {
               var props = new MaterialPropertyBlock();
               props.SetColor("_Color", new Color(vec4.x, vec4.y, vec4.z, vec4.w));

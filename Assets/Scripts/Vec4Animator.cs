@@ -13,19 +13,19 @@ public class Vec4Animator : MonoBehaviour {
   private IOnValue onValue;
   private IVector4Animation animation;
 
-  public static Vec4Animator MakeOrGetFrom(IClock clock, GameObject gameObject, IOnValue onValue) {
+  public static Vec4Animator MakeOrGetFrom(IClock clock, GameObject gameObject, Vector4 initialValue, IOnValue onValue) {
     var animator = gameObject.GetComponent<Vec4Animator>() as Vec4Animator;
     if (animator == null) {
       animator = gameObject.AddComponent<Vec4Animator>() as Vec4Animator;
-      animator.Init(clock, onValue);
+      animator.Init(clock, initialValue, onValue);
     }
     return animator;
   }
 
-  public void Init(IClock clock, IOnValue onValue) {
+  public void Init(IClock clock, Vector4 initialValue, IOnValue onValue) {
     this.onValue = onValue;
     this.clock = clock;
-    this.animation = new ConstantVector4Animation(new Vector4(0, 0, 0, 1));
+    this.animation = new ConstantVector4Animation(initialValue);
   }
 
   public IVector4Animation Get() {

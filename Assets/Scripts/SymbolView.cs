@@ -184,7 +184,7 @@ namespace Domino {
 
     public void SetFrontColor(IVector4Animation newColor) {
       var animator = Vec4Animator.MakeOrGetFrom(
-          clock, faceObject.gameObject, (vec4) => {
+          clock, faceObject.gameObject, new Vector4(0, 0, 0, 1), (vec4) => {
             foreach (var meshRenderer in faceObject.GetComponentsInChildren<MeshRenderer>()) {
               var props = new MaterialPropertyBlock();
               props.SetColor("_Color", new Color(vec4.x, vec4.y, vec4.z, vec4.w));

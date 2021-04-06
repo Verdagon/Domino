@@ -142,9 +142,11 @@ namespace Geomancer {
         var defaultColor = Vector4Animation.Color(.4f, .4f, 0, 1);
         var defaultShape = DominoShape.TALL_DOMINO;
         
-        var position = CalculatePosition(terrain.elevationStepHeight, terrain.pattern, location, terrainTile.elevation);
+        // var position = CalculatePosition(terrain.elevationStepHeight, terrain.pattern, location, terrainTile.elevation);
         var initialUnit =
             new InitialUnit(
+                location,
+                terrainTile.elevation,
                 membersDominoShapes.Count > 0 ? membersDominoShapes[membersDominoShapes.Count - 1].Item2 : defaultShape,
                 membersDominoColors.Count > 0 ? membersDominoColors[membersDominoColors.Count - 1].Item2 : defaultColor,
                 membersUnitFaces[membersUnitFaces.Count - 1].Item2,

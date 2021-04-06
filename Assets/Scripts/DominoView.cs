@@ -12,10 +12,10 @@ namespace Domino {
   
   public class DominoDescription {
     public readonly bool large;
-    public readonly Vector4Animation color;
+    public readonly IVector4Animation color;
     public DominoDescription(
         bool large,
-        Vector4Animation color) {
+        IVector4Animation color) {
       this.large = large;
       this.color = color;
     }
@@ -76,14 +76,15 @@ namespace Domino {
       initialized = true;
     }
 
-    public void SetDescription(DominoDescription newDominoDescription) {
-      large = newDominoDescription.large;
-      color = newDominoDescription.color;
-    }
+    // public void SetDescription(DominoDescription newDominoDescription) {
+    //   large = newDominoDescription.large;
+    //   color = newDominoDescription.color;
+    // }
 
     private void InnerSetLarge(bool newLarge) {
       Destroy(innerObject);
       innerObject = loader.NewQuad();
+      // ColorChanger.AddTo(gameObject, new[] {innerObject}, new GameObject[0] { });
       // if (newLarge) {
       //   innerObject = loader.CreateLargeDomino();
       // } else {
@@ -94,7 +95,7 @@ namespace Domino {
     }
 
     private void InnerSetColor(IVector4Animation newColor) {
-      ColorAnimator.MakeOrGetFrom(clock, innerObject).Set(newColor, RenderPriority.DOMINO);
+      // ColorAnimator.MakeOrGetFrom(clock, gameObject).Set(newColor, RenderPriority.DOMINO);
       color = newColor;
     }
 
@@ -105,10 +106,10 @@ namespace Domino {
     }
 
     public void Fade(long durationMs) {
-      var animator = ColorAnimator.MakeOrGetFrom(clock, innerObject);
-      animator.Set(
-        FadeAnimator.Fade(animator.Get(), clock.GetTimeMs(), durationMs),
-        RenderPriority.DOMINO);
+      // var animator = ColorAnimator.MakeOrGetFrom(clock, innerObject);
+      // animator.Set(
+      //   FadeAnimator.Fade(animator.Get(), clock.GetTimeMs(), durationMs),
+      //   RenderPriority.DOMINO);
     }
   }
 }

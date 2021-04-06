@@ -87,8 +87,8 @@ namespace Domino {
       return id;
     }
 
-    public void SetupGame(Vec3 cameraPosition, float elevationStepHeight, Pattern pattern) {
-      messages.Add(new SetupGameMessage(cameraPosition, elevationStepHeight, pattern));
+    public void SetupGame(Vec3 cameraPosition, Vec3 lookatOffsetToCamera, int elevationStepHeight, Pattern pattern) {
+      messages.Add(new SetupGameMessage(cameraPosition, lookatOffsetToCamera, elevationStepHeight, pattern));
     }
 
     public void ScheduleClose(ulong viewId, long startMsFromNow) {

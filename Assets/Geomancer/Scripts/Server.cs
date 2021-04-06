@@ -103,8 +103,11 @@ namespace Geomancer {
       }
       
       var cameraLookAtPosition = terrain.GetTileCenter(startLocation);
-      
-      domino.SetupGame(cameraLookAtPosition, elevationStepHeight * ModelExtensions.ModelToUnityMultiplier, pattern);
+      Vec3 lookatOffsetToCamera = new Vec3(0, 5000, -10000);
+      domino.SetupGame(
+          cameraLookAtPosition,
+          lookatOffsetToCamera,
+          elevationStepHeight, pattern);
 
       membersView = new ListView(domino, 0, 0, 40, 16);
       lookPanelView = new LookPanelView(domino, screenGW, -1, 2);

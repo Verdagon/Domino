@@ -8,14 +8,17 @@ namespace Domino {
 
   public class SetupGameMessage : IDominoMessage {
     public readonly Vec3 cameraPosition;
-    public readonly float elevationStepHeight;
+    public readonly Vec3 lookatOffsetToCamera;
+    public readonly int elevationStepHeight;
     public readonly Pattern pattern;
 
     public SetupGameMessage(
         Vec3 cameraPosition,
-        float elevationStepHeight,
+        Vec3 lookatOffsetToCamera,
+        int elevationStepHeight,
         Pattern pattern) {
       this.cameraPosition = cameraPosition;
+      this.lookatOffsetToCamera = lookatOffsetToCamera;
       this.elevationStepHeight = elevationStepHeight;
       this.pattern = pattern;
     }
