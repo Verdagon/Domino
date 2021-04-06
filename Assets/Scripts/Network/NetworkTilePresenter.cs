@@ -15,7 +15,9 @@ namespace Domino {
     // private readonly int shapeIndex;
 
     private readonly TileView tileView;
-    
+
+    public Location location => tileView.location;
+    public int elevation => tileView.elevation;
 
     public NetworkTilePresenter(
         ILoader loader,
@@ -37,15 +39,24 @@ namespace Domino {
       var (groundMesh, outlinesMesh) = tileShapeMeshCache.Get(shapeIndex, elevationStepHeight, .025f);
       var location = initialTile.location;
       
-      var position = CalculatePosition(elevationStepHeight, pattern, location, 1);
+      // var position = CalculatePosition(elevationStepHeight, pattern, location, initialTile.elevation);
       // var patternTile = pattern.patternTiles[location.indexInGroup];
       // float rotateDegrees = patternTile.rotateRadianards / 1000f * 180f / (float) Math.PI;
       var tileDescription = TranslateInitialTile(elevationStepHeight, location, pattern, initialTile);
       tileView =
           TileView.Create(
-              newTileViewId, initialTile.location, loader, groundMesh, outlinesMesh, clock, timer, tileDescription);
+              newTileViewId,
+              initialTile.location,
+              pattern,
+              loader,
+              groundMesh,
+              outlinesMesh,
+              clock,
+              timer,
+              initialTile.elevation,
+              tileDescription);
       // tileView.gameObject.AddComponent<TerrainTilePresenterTile>().Init(this);
-      tileView.gameObject.transform.localPosition = position;
+      // tileView.gameObject.transform.localPosition = position;
     }
 
     public void Destroy() {
@@ -96,20 +107,18 @@ namespace Domino {
       }
       return result;
     }
-    
-    private static Vector3 CalculatePosition(float elevationStepHeight, Pattern pattern, Location location, int elevation) {
-      var positionVec2 = pattern.GetTileCenter(location);
-      var positionVec3 = new Vec3(positionVec2.x, positionVec2.y, 0);
-      var unityPos = positionVec3.ToUnity();
-      unityPos.y += elevation * elevationStepHeight;
-      return unityPos;
+
+    public void SetElevation(int elevation) {
+      tileView.SetElevation(elevation);
     }
-    
+
     public void HandleMessage(IDominoMessage message) {
       if (message is SetSurfaceColorMessage setSurfaceColor) {
         tileView.SetSurfaceColor(setSurfaceColor.frontColor);
       } else if (message is SetCliffColorMessage setCliffColor) {
         tileView.SetCliffColor(setCliffColor.sideColor);
+      } else if (message is SetElevationMessage setElevation) {
+        Asserts.Assert(false);
       } else {
         Asserts.Assert(false);
       }

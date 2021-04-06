@@ -67,9 +67,20 @@ public class Root : MonoBehaviour {
         elevationStepHeight = setupGame.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier;
         pattern = setupGame.pattern;
         terrainPresenter = new TerrainPresenter(server, clock, clock, loader, pattern, elevationStepHeight);
-        unitsPresenter = new UnitsPresenter(
-            server, clock, clock, loader, pattern, cameraController.lookatOffsetToCamera, elevationStepHeight);
+        unitsPresenter =
+            new UnitsPresenter(
+                server,
+                clock,
+                clock,
+                loader,
+                pattern,
+                cameraController.targetLookatOffsetToCamera,
+                elevationStepHeight,
+                loc => terrainPresenter.GetElevation(loc));
         // setupGame.cameraPosition;
+      } else if (message is SetElevationMessage setElevation) {
+        terrainPresenter.SetElevation(setElevation.tileViewId, setElevation.elevation);
+        unitsPresenter.RefreshElevation(terrainPresenter.GetLocation(setElevation.tileViewId));
       } else if (message is CreateTileMessage ||
           message is SetSurfaceColorMessage ||
           message is SetCliffColorMessage ||
@@ -139,13 +150,13 @@ public class Root : MonoBehaviour {
     
     if (Input.GetKeyDown(KeyCode.Backslash)) {
       cameraController.StartRotatingCameraTo(
-          Quaternion.Euler(0, 30, 0) * cameraController.lookatOffsetToCamera,
+          Quaternion.Euler(0, 70, 0) * cameraController.targetLookatOffsetToCamera,
           200);
       // unitsPresenter.SetCameraDirection(cameraController.lookatOffsetToCamera);
     }
     if (Input.GetKeyDown(KeyCode.Slash)) {
       cameraController.StartRotatingCameraTo(
-          Quaternion.Euler(0, -30, 0) * cameraController.lookatOffsetToCamera,
+          Quaternion.Euler(0, -70, 0) * cameraController.targetLookatOffsetToCamera,
           200);
     }
     

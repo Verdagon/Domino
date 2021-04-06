@@ -6,6 +6,8 @@ using UnityEngine;
 
 namespace Domino {
   public class NetworkUnitPresenter {
+    public delegate int IGetElevation(Location location);
+    
     private readonly ILoader loader;
     private readonly IClock clock;
     private readonly ITimer timer;
@@ -14,8 +16,13 @@ namespace Domino {
     private readonly Pattern pattern;
     // private readonly int shapeIndex;
 
+    public Location location => unitView.location;
+
     private readonly UnitView unitView;
-    private Vector3 lookatOffsetToCamera;
+    // private Vector3 lookatOffsetToCamera;
+    // private int elevation;
+
+    private IGetElevation getElevation;
     
     public NetworkUnitPresenter(
         ILoader loader,
@@ -24,28 +31,33 @@ namespace Domino {
         // TileShapeMeshCache tileShapeMeshCache,
         float elevationStepHeight,
         Pattern pattern,
-        ulong newTileViewId,
+        ulong newUnitViewId,
         Vector3 lookatOffsetToCamera,
-        InitialUnit initialUnit) {
+        InitialUnit initialUnit,
+        IGetElevation getElevation) {
       this.loader = loader;
       this.clock = clock;
       this.timer = timer;
       // this.tileShapeMeshCache = tileShapeMeshCache;
       this.elevationStepHeight = elevationStepHeight;
       this.pattern = pattern;
-      this.lookatOffsetToCamera = lookatOffsetToCamera;
-      var shapeIndex = pattern.patternTiles[initialUnit.location.indexInGroup].shapeIndex;
+      this.getElevation = getElevation;
+      // this.lookatOffsetToCamera = lookatOffsetToCamera;
+      // this.elevation = elevation;
+      // var shapeIndex = pattern.patternTiles[initialUnit.location.indexInGroup].shapeIndex;
       
       // var (groundMesh, outlinesMesh) = tileShapeMeshCache.Get(shapeIndex, elevationStepHeight, .025f);
-      var location = initialUnit.location;
-      
-      var position = CalculatePosition(elevationStepHeight, pattern, location, initialUnit.elevation);
+      // var location = initialUnit.location;
+
+      int elevation = getElevation(initialUnit.location);
       var unitDescription = TranslateInitialUnit(initialUnit);
-      unitView = UnitView.Create(loader, clock, timer, position, unitDescription, lookatOffsetToCamera);
+      unitView =
+          UnitView.Create(
+              loader, clock, timer, pattern, elevationStepHeight, initialUnit.location, elevation, unitDescription, lookatOffsetToCamera);
       
               // newTileViewId, initialTile.location, loader, groundMesh, outlinesMesh, clock, timer, unitDescription);
       // tileView.gameObject.AddComponent<TerrainTilePresenterTile>().Init(this);
-      unitView.gameObject.transform.localPosition = position;
+      // unitView.gameObject.transform.localPosition = position;
     }
 
     public void Destroy() {
@@ -95,12 +107,8 @@ namespace Domino {
       return result;
     }
     
-    private static Vector3 CalculatePosition(float elevationStepHeight, Pattern pattern, Location location, int elevation) {
-      var positionVec2 = pattern.GetTileCenter(location);
-      var positionVec3 = new Vec3(positionVec2.x, positionVec2.y, 0);
-      var unityPos = positionVec3.ToUnity();
-      unityPos.y += elevation * elevationStepHeight;
-      return unityPos;
+    public void RefreshElevation() {
+      unitView.TeleportTo(unitView.location, getElevation(unitView.location));
     }
     
     public void HandleMessage(IDominoMessage message) {
@@ -114,7 +122,7 @@ namespace Domino {
     }
     
     public void SetCameraDirection(Vector3 lookatOffsetToCamera) {
-      this.lookatOffsetToCamera = lookatOffsetToCamera;
+      // this.lookatOffsetToCamera = lookatOffsetToCamera;
       unitView.SetCameraDirection(lookatOffsetToCamera);
     }
   }

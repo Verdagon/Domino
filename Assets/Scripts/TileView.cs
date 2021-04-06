@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Geomancer;
 using Geomancer.Model;
 using UnityEngine;
 using Virtence.VText;
@@ -107,10 +108,12 @@ namespace Domino {
 
     public ulong tileViewId { get; private set; }
     public Location location { get; private set; }
+    public int elevation { get; private set; }
     
     private IClock clock;
     private ITimer timer;
 
+    private Pattern pattern;
     private float elevationStepHeight;
     private IVector4Animation surfaceColor;
     private IVector4Animation cliffColor;
@@ -143,16 +146,18 @@ namespace Domino {
     public static TileView Create(
         ulong tileViewId,
         Location location,
+        Pattern pattern,
         ILoader loader,
         Mesh groundMesh,
         Mesh outlinesMesh,
         IClock clock,
         ITimer timer,
+        int elevation,
         TileDescription initialDescription) {
       var gameObject = loader.NewEmptyGameObject();
       var tileView = gameObject.AddComponent<TileView>();
       
-      tileView.Init(tileViewId, location, loader, clock, timer, initialDescription, groundMesh, outlinesMesh);
+      tileView.Init(tileViewId, location, pattern, loader, clock, timer, elevation, initialDescription, groundMesh, outlinesMesh);
       return tileView;
       // return (facesObject, outlinesObject);
     }
@@ -160,19 +165,23 @@ namespace Domino {
     public void Init(
         ulong tileViewId,
         Location location,
+        Pattern pattern,
         ILoader loader,
         IClock clock,
         ITimer timer,
+        int elevation,
         TileDescription initialDescription,
         Mesh groundObject,
         Mesh outlinesObject) {
       this.tileViewId = tileViewId;
       this.location = location;
+      this.pattern = pattern;
       this.loader = loader;
       this.groundGameObjects = new List<GameObject>();
       this.outlineGameObjects = new List<GameObject>();
       this.groundMesh = groundObject;
       this.outlinesMesh = outlinesObject;
+      this.elevation = elevation;
       this.clock = clock;
       this.timer = timer;
 
@@ -195,6 +204,8 @@ namespace Domino {
       foreach (var (itemId, itemDescription) in initialDescription.itemSymbolDescriptionByItemId) {
         AddItem(itemId, itemDescription);
       }
+
+      RefreshPosition();
     }
 
     public void DestroyTile() {
@@ -318,6 +329,14 @@ namespace Domino {
       }
     }
     
+    private static Vector3 CalculatePosition(float elevationStepHeight, Pattern pattern, Location location, int elevation) {
+      var positionVec2 = pattern.GetTileCenter(location);
+      var positionVec3 = new Vec3(positionVec2.x, positionVec2.y, 0);
+      var unityPos = positionVec3.ToUnity();
+      unityPos.y += elevation * elevationStepHeight;
+      return unityPos;
+    }
+
     public void SetSurfaceColor(IVector4Animation frontColor) {
       this.surfaceColor = frontColor;
       RefreshSurfaceColor();
@@ -340,6 +359,17 @@ namespace Domino {
       // foreach (var tsv in tileSymbolViews) {
       //   tsv.SetSidesColor(sideColor);
       // }
+    }
+
+    public void SetElevation(int elevation) {
+      this.elevation = elevation;
+      SetDepth(elevation);
+      RefreshPosition();
+    }
+
+    private void RefreshPosition() {
+      gameObject.transform.localPosition =
+          CalculatePosition(elevationStepHeight, pattern, location, elevation);
     }
 
     private static void MaybeSetMesh(GameObject gameObject, Mesh mesh) {

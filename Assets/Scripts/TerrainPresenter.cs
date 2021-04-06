@@ -13,7 +13,8 @@ namespace Geomancer {
     ITimer timer;
     ILoader loader;
     private TileShapeMeshCache tileShapeMeshCache;
-    Dictionary<ulong, NetworkTilePresenter> tilePresenters = new Dictionary<ulong, NetworkTilePresenter>();
+    Dictionary<ulong, NetworkTilePresenter> idToTilePresenters = new Dictionary<ulong, NetworkTilePresenter>();
+    Dictionary<Location, NetworkTilePresenter> locToTilePresenters = new Dictionary<Location, NetworkTilePresenter>();
 
     TileView maybeMouseHoveredLocation = null;
     // private SortedSet<TileView> highlightedLocations = new SortedSet<Location>();
@@ -32,7 +33,8 @@ namespace Geomancer {
       this.timer = timer;
       this.loader = loader;
       this.elevationStepHeight = elevationStepHeight;
-      this.tilePresenters = new Dictionary<ulong, NetworkTilePresenter>();
+      this.idToTilePresenters = new Dictionary<ulong, NetworkTilePresenter>();
+      this.locToTilePresenters = new Dictionary<Location, NetworkTilePresenter>();
 
       // foreach (var locationAndTile in terrain.tiles) {
       //   addTerrainTile(locationAndTile.Key, locationAndTile.Value);
@@ -48,24 +50,43 @@ namespace Geomancer {
     // public Location GetMaybeMouseHighlightLocation() { return maybeMouseHighlightedLocation; }
 
     public void DestroyTerrainPresenter() {
-      foreach (var entry in tilePresenters) {
+      foreach (var entry in idToTilePresenters) {
         entry.Value.Destroy();
       }
+      idToTilePresenters.Clear();
+      locToTilePresenters.Clear();
+    }
+
+    public int GetElevation(Location loc) {
+      return locToTilePresenters[loc].elevation;
+    }
+    public Location GetLocation(ulong tileViewId) {
+      return idToTilePresenters[tileViewId].location;
+    }
+
+    public void SetElevation(ulong tileViewId, int elevation) {
+      idToTilePresenters[tileViewId].SetElevation(elevation);
     }
 
     public void HandleMessage(IDominoMessage message) {
       if (message is CreateTileMessage createTile) {
-        tilePresenters.Add(
-            createTile.id,
+        var tilePresenter =
             new NetworkTilePresenter(
-                loader, clock, timer, tileShapeMeshCache, elevationStepHeight, pattern, createTile.id, createTile.initialTile));
+                loader, clock, timer, tileShapeMeshCache, elevationStepHeight, pattern, createTile.id,
+                createTile.initialTile);
+        idToTilePresenters.Add(createTile.id, tilePresenter);
+        locToTilePresenters.Add(createTile.initialTile.location, tilePresenter);
       } else if (message is DestroyTileMessage destroyTile) {
-        tilePresenters[destroyTile.tileViewId].Destroy();
-        tilePresenters.Remove(destroyTile.tileViewId);
+        var loc = idToTilePresenters[destroyTile.tileViewId].location;
+        idToTilePresenters[destroyTile.tileViewId].Destroy();
+        idToTilePresenters.Remove(destroyTile.tileViewId);
+        locToTilePresenters.Remove(loc);
       } else if (message is SetSurfaceColorMessage setSurfaceColor) {
-        tilePresenters[setSurfaceColor.tileViewId].HandleMessage(message);
+        idToTilePresenters[setSurfaceColor.tileViewId].HandleMessage(message);
+      } else if (message is SetElevationMessage setElevation) {
+        idToTilePresenters[setElevation.tileViewId].HandleMessage(message);
       } else if (message is SetCliffColorMessage setCliffColor) {
-        tilePresenters[setCliffColor.tileViewId].HandleMessage(message);
+        idToTilePresenters[setCliffColor.tileViewId].HandleMessage(message);
       } else {
         Asserts.Assert(false, message.GetType().Name);
       }

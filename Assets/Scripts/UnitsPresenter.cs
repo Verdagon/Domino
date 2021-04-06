@@ -6,6 +6,8 @@ using Domino;
 
 namespace Geomancer {
   public class UnitsPresenter {
+    public delegate int IGetElevation(Location loc);
+    
     private DominoToGameConnection server;
     private Pattern pattern;
     private float elevationStepHeight;
@@ -14,7 +16,9 @@ namespace Geomancer {
     ILoader loader;
     private Vector3 lookatOffsetToCamera;
     // private TileShapeMeshCache tileShapeMeshCache;
-    Dictionary<ulong, NetworkUnitPresenter> unitPresenters = new Dictionary<ulong, NetworkUnitPresenter>();
+    Dictionary<ulong, NetworkUnitPresenter> idToUnitPresenter = new Dictionary<ulong, NetworkUnitPresenter>();
+    Dictionary<Location, HashSet<ulong>> locToUnitIds = new Dictionary<Location, HashSet<ulong>>();
+    private IGetElevation getElevation;
 
     public UnitsPresenter(
         DominoToGameConnection server,
@@ -23,7 +27,8 @@ namespace Geomancer {
         ILoader loader,
         Pattern pattern,
         Vector3 lookatOffsetToCamera,
-        float elevationStepHeight) {
+        float elevationStepHeight,
+        IGetElevation getElevation) {
       this.pattern = pattern;
       // this.tileShapeMeshCache = new TileShapeMeshCache(pattern);
       this.server = server;
@@ -32,24 +37,39 @@ namespace Geomancer {
       this.loader = loader;
       this.lookatOffsetToCamera = lookatOffsetToCamera;
       this.elevationStepHeight = elevationStepHeight;
-      this.unitPresenters = new Dictionary<ulong, NetworkUnitPresenter>();
+      this.getElevation = getElevation;
+      this.idToUnitPresenter = new Dictionary<ulong, NetworkUnitPresenter>();
     }
 
     public void DestroyUnitsPresenter() {
-      foreach (var entry in unitPresenters) {
+      foreach (var entry in idToUnitPresenter) {
         entry.Value.Destroy();
       }
     }
 
     public void HandleMessage(IDominoMessage message) {
       if (message is CreateUnitMessage createUnit) {
-        unitPresenters.Add(
+        idToUnitPresenter.Add(
             createUnit.id,
             new NetworkUnitPresenter(
-                loader, clock, timer, elevationStepHeight, pattern, createUnit.id, lookatOffsetToCamera, createUnit.initialUnit));
+                loader,
+                clock,
+                timer,
+                elevationStepHeight,
+                pattern,
+                createUnit.id,
+                lookatOffsetToCamera,
+                createUnit.initialUnit,
+                loc => getElevation(loc)));
+        if (!locToUnitIds.ContainsKey(createUnit.initialUnit.location)) {
+          locToUnitIds.Add(createUnit.initialUnit.location, new HashSet<ulong>());
+        }
+        locToUnitIds[createUnit.initialUnit.location].Add(createUnit.id);
       } else if (message is DestroyUnitMessage destroyUnit) {
-        unitPresenters[destroyUnit.unitViewId].Destroy();
-        unitPresenters.Remove(destroyUnit.unitViewId);
+        var loc = idToUnitPresenter[destroyUnit.unitViewId].location;
+        locToUnitIds[loc].Remove(destroyUnit.unitViewId);
+        idToUnitPresenter[destroyUnit.unitViewId].Destroy();
+        idToUnitPresenter.Remove(destroyUnit.unitViewId);
       // } else if (message is SetSurfaceColorMessage setSurfaceColor) {
       //   unitPresenters[setSurfaceColor.tileViewId].HandleMessage(message);
       // } else if (message is SetCliffColorMessage setCliffColor) {
@@ -59,9 +79,17 @@ namespace Geomancer {
       }
     }
 
+    public void RefreshElevation(Location location) {
+      if (locToUnitIds.TryGetValue(location, out var unitIds)) {
+        foreach (var id in unitIds) {
+          idToUnitPresenter[id].RefreshElevation();
+        }
+      }
+    }
+
     public void SetCameraDirection(Vector3 lookatOffsetToCamera) {
       this.lookatOffsetToCamera = lookatOffsetToCamera;
-      foreach (var idAndUnitPresenter in unitPresenters) {
+      foreach (var idAndUnitPresenter in idToUnitPresenter) {
         idAndUnitPresenter.Value.SetCameraDirection(lookatOffsetToCamera);{{}}
       }
     }

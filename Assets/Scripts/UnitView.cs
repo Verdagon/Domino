@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Geomancer;
+using Geomancer.Model;
 using UnityEngine;
 
 namespace Domino {
@@ -114,11 +116,11 @@ namespace Domino {
     // Nullable. Only non-null when there's details.
     private MeterView mpMeterView;
 
-    // The unadjusted position of the unit. By unadjusted, we mean that
-    // we havent offsetted it (like in a lunge) and havent moved it forward
-    // (to compensate for the lean).
-    // This should probably just be the center of the tile below us.
-    private Vector3 basePosition;
+    // These help calculate where the unit should end up.
+    private Pattern pattern;
+    private float elevationStepHeight;
+    public Location location { get; private set; }
+    private int elevation;
 
     // We have timers active to destroy these when theyre done, but we might
     // also destroy them if we need to Destruct fast.
@@ -128,12 +130,15 @@ namespace Domino {
         ILoader loader,
         IClock clock,
         ITimer timer,
-        Vector3 basePosition,
+        Pattern pattern,
+        float elevationStepHeight,
+        Location location,
+        int elevation,
         UnitDescription unitDescription,
         Vector3 lookatOffsetToCamera) {
       var obj = loader.NewEmptyGameObject();
       var unitView = obj.AddComponent<UnitView>();
-      unitView.Init(loader, clock, timer, basePosition, unitDescription, lookatOffsetToCamera);
+      unitView.Init(loader, clock, timer, pattern, elevationStepHeight, location, elevation, unitDescription, lookatOffsetToCamera);
       return unitView;
     }
     
@@ -141,13 +146,20 @@ namespace Domino {
         ILoader loader,
         IClock clock,
         ITimer timer,
-        Vector3 basePosition,
+        Pattern pattern,
+        float elevationStepHeight,
+        Location location,
+        int elevation,
         UnitDescription unitDescription,
         Vector3 lookatOffsetToCamera) {
       this.clock = clock;
       this.loader = loader;
       this.timer = timer;
-      this.basePosition = basePosition;
+      this.pattern = pattern;
+      this.elevationStepHeight = elevationStepHeight;
+      this.location = location;
+      Asserts.Assert(location != null);
+      this.elevation = elevation;
       this.description = unitDescription;
       this.lookatOffsetToCamera = lookatOffsetToCamera;
       transientRunesAndTimerIds = new List<KeyValuePair<SymbolView, int>>();
@@ -162,8 +174,6 @@ namespace Domino {
       // body.transform.localPosition = new Vector3(0, 0, 0);
       body.transform.SetParent(offsetter.transform, false);
 
-      RefreshRotation();
-      
       // 0 .507 .1
       // 40 0 0
       // .55 0.8 1
@@ -181,6 +191,11 @@ namespace Domino {
       dominoView = DominoView.Create(clock, loader, unitDescription.dominoDescription);
       // dominoView.gameObject.transform.localPosition = new Vector3(0, 0, 0);
       dominoView.gameObject.transform.SetParent(body.transform, false);
+
+      // var position = CalculatePosition(elevationStepHeight, pattern, location, elevation);
+      
+      RefreshPosition();
+      RefreshRotation();
 
       // faceSymbolView = SymbolView.Create(clock, loader, unitDescription.faceSymbolDescription);
       // faceSymbolView.gameObject.transform.FromMatrix(
@@ -209,6 +224,18 @@ namespace Domino {
 
       initialized = true;
       instanceAlive = true;
+    }
+
+    private void RefreshPosition() {
+      gameObject.transform.localPosition = CalculatePosition(elevationStepHeight, pattern, location, elevation);
+    }
+    
+    private static Vector3 CalculatePosition(float elevationStepHeight, Pattern pattern, Location location, int elevation) {
+      var positionVec2 = pattern.GetTileCenter(location);
+      var positionVec3 = new Vec3(positionVec2.x, positionVec2.y, 0);
+      var unityPos = positionVec3.ToUnity();
+      unityPos.y += elevation * elevationStepHeight;
+      return unityPos;
     }
 
     // public void SetUnitViewActive(bool enabled) {
@@ -328,11 +355,20 @@ namespace Domino {
       }
     }
 
-    public long HopTo(Vector3 newBasePosition) {
-      Vector3 oldBasePosition = basePosition;
-      basePosition = newBasePosition;
+    public void TeleportTo(Location location, int elevation) {
+      this.location = location;
+      this.elevation = elevation;
+      // Vector3 oldBasePosition = basePosition;
+      // basePosition = newBasePosition;
+      RefreshPosition();
+    }
 
-      gameObject.transform.localPosition = newBasePosition;
+    public long HopTo(Location newLocation, int newElevation) {
+      Vector3 oldBasePosition = CalculatePosition(elevationStepHeight, pattern, location, elevation);
+      this.location = newLocation;
+      this.elevation = newElevation;
+      Vector3 newBasePosition = CalculatePosition(elevationStepHeight, pattern, newLocation, newElevation);
+      RefreshPosition();
 
       StartHopAnimation(HOP_DURATION_MS, newBasePosition - oldBasePosition, 0.5f);
       return clock.GetTimeMs() + HOP_DURATION_MS;
@@ -484,7 +520,10 @@ namespace Domino {
       //     (float)Math.Atan2(
       //         horizontalCameraDirection.y - unitFacingDefaultDirection.y,
       //         horizontalCameraDirection.x - unitFacingDefaultDirection.x);
-      body.transform.localRotation = Quaternion.LookRotation(horizontalCameraDirection, Vector3.up);
+      var angles = Quaternion.LookRotation(horizontalCameraDirection, Vector3.up).eulerAngles;
+      body.transform.localRotation = Quaternion.Euler(angles);
+      
+      body.transform.localScale = new Vector3(.8f, .8f, 1);
     }
   }
 }

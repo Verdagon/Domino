@@ -84,6 +84,7 @@ namespace Domino {
     private void InnerSetLarge(bool newLarge) {
       Destroy(innerObject);
       innerObject = loader.NewQuad();
+      innerObject.GetComponent<MeshCollider>().enabled = false;
       // ColorChanger.AddTo(gameObject, new[] {innerObject}, new GameObject[0] { });
       // if (newLarge) {
       //   innerObject = loader.CreateLargeDomino();
@@ -91,7 +92,31 @@ namespace Domino {
       //   innerObject = loader.CreateSmallDomino();
       // }
       large = newLarge;
+      if (newLarge) {
+        innerObject.transform.localScale = new Vector3(1, GetHeight(), 1);
+      } else {
+        // innerObject = loader.CreateSmallDomino();
+      }
+      RefreshRotation();
       //InnerSetColor(color);
+    }
+
+    public float GetHeight() {
+      return large ? 1.3f : 1;
+    }
+
+    public void RefreshRotation() {
+      float dominoHeight = GetHeight();
+      
+      float leanDegrees = 50;
+      gameObject.transform.localRotation = Quaternion.Euler(new Vector3(leanDegrees, 0, 0));
+      float leanRadians = (float)(leanDegrees * Math.PI / 180);
+
+      // Right now the domino is half in the ground, let's bring it up a bit.
+      float lift = (dominoHeight / 2) * (float) Math.Cos(leanRadians);
+      // The domino's center is above the center of the tile, let's push it back a tiny bit.
+      float stepBack = (dominoHeight / 2) * (float) Math.Sin(leanRadians) / 2;
+      gameObject.transform.localPosition = new Vector3(0, lift, stepBack);
     }
 
     private void InnerSetColor(IVector4Animation newColor) {

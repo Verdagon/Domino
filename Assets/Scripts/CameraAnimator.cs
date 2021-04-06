@@ -16,12 +16,12 @@ namespace Domino {
       this.clock = clock;
       this.cameraObject = cameraObject;
       this.lookAtAnimation = initialLookAtAnimation;
-      this.lookatOffsetToCameraAnimation = initialOffsetFromLookAtAnimation;
+      this.polarLookatOffsetToCameraAnimation = initialOffsetFromLookAtAnimation;
       initialized = true;
     }
 
     public IVector3Animation lookAtAnimation = new IdentityVector3Animation();
-    public IVector3Animation lookatOffsetToCameraAnimation = new IdentityVector3Animation();
+    public IVector3Animation polarLookatOffsetToCameraAnimation = new IdentityVector3Animation();
 
     void Start() {
       Asserts.Assert(cameraObject != null);
@@ -59,10 +59,11 @@ namespace Domino {
 
     void Update() {
       lookAtAnimation = lookAtAnimation.Simplify(clock.GetTimeMs());
-      lookatOffsetToCameraAnimation = lookatOffsetToCameraAnimation.Simplify(clock.GetTimeMs());
+      polarLookatOffsetToCameraAnimation = polarLookatOffsetToCameraAnimation.Simplify(clock.GetTimeMs());
 
       Vector3 lookAt = lookAtAnimation.Get(clock.GetTimeMs());
-      Vector3 offsetToLookAt = lookatOffsetToCameraAnimation.Get(clock.GetTimeMs());
+      Vector3 polarOffsetToLookAt = polarLookatOffsetToCameraAnimation.Get(clock.GetTimeMs());
+      Vector3 offsetToLookAt = CameraController.PolarToCartesian(polarOffsetToLookAt);
       cameraObject.transform.localPosition = lookAt - offsetToLookAt;
 
       cameraObject.transform.localRotation =
@@ -72,7 +73,7 @@ namespace Domino {
           0);
 
       bool lookAtStable = lookAtAnimation is ConstantMatrix4x4Animation || lookAtAnimation is IdentityMatrix4x4Animation;
-      bool offsetFromLookAtStable = lookatOffsetToCameraAnimation is ConstantMatrix4x4Animation || lookatOffsetToCameraAnimation is IdentityMatrix4x4Animation;
+      bool offsetFromLookAtStable = polarLookatOffsetToCameraAnimation is ConstantMatrix4x4Animation || polarLookatOffsetToCameraAnimation is IdentityMatrix4x4Animation;
       if (lookAtStable && offsetFromLookAtStable) {
         Destroy(this);
       }

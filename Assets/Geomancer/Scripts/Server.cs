@@ -129,8 +129,9 @@ namespace Geomancer {
     }
 
     public void KeyDown(int c, bool leftShiftDown, bool rightShiftDown, bool ctrlDown, bool leftAltDown, bool rightAltDown) {
+      Debug.Log("Got key down: " + c);
       switch (c) {
-        case '\u005c':
+        case '\u001b':
           SetSelection(new SortedSet<Location>());
           break;
         case '/':
