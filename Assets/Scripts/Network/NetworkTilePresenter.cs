@@ -119,6 +119,16 @@ namespace Domino {
         tileView.SetCliffColor(setCliffColor.sideColor);
       } else if (message is SetElevationMessage setElevation) {
         Asserts.Assert(false);
+      } else if (message is SetOverlayMessage setOverlay) {
+        tileView.SetOverlay(TranslateMaybeInitialSymbol(RenderPriority.OVERLAY, setOverlay.maybeOverlay));
+      } else if (message is SetFeatureMessage setFeature) {
+        tileView.SetFeature(TranslateMaybeInitialSymbol(RenderPriority.OVERLAY, setFeature.maybeFeature));
+      } else if (message is AddItemMessage addItem) {
+        tileView.AddItem(addItem.itemId, TranslateMaybeInitialSymbol(RenderPriority.ITEM, addItem.symbolDescription));
+      } else if (message is RemoveItemMessage removeItem) {
+        tileView.RemoveItem(removeItem.itemId);
+      } else if (message is ClearItemsMessage clearItems) {
+        tileView.ClearItems();
       } else {
         Asserts.Assert(false);
       }

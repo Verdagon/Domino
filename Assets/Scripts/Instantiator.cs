@@ -165,28 +165,28 @@ namespace Domino {
       return meterView;
     }
 
-    public SymbolView CreateSymbolView(
-      IClock clock,
-        // If true, z=0 will be the front of the symbol.
-        // If false, z=0 will be the back of the symbol (only really makes sense for extruded symbols).
-        bool originFront,
-        ExtrudedSymbolDescription symbolDescription) {
-      Asserts.Assert(false);
-      return null;
-      // var symbolGameObject = Instantiate(glyphPrefab);
-      // var symbolView = symbolGameObject.GetComponent<SymbolView>();
-      // symbolView.Init(clock, this, originFront, symbolDescription);
-      // return symbolView;
-    }
+    // public SymbolView CreateSymbolView(
+    //   IClock clock,
+    //     // If true, z=0 will be the front of the symbol.
+    //     // If false, z=0 will be the back of the symbol (only really makes sense for extruded symbols).
+    //     bool originFront,
+    //     ExtrudedSymbolDescription symbolDescription) {
+    //   Asserts.Assert(false);
+    //   return null;
+    //   // var symbolGameObject = Instantiate(glyphPrefab);
+    //   // var symbolView = symbolGameObject.GetComponent<SymbolView>();
+    //   // symbolView.Init(clock, this, originFront, symbolDescription);
+    //   // return symbolView;
+    // }
 
-    public SymbolBarView CreateSymbolBarView(
-      IClock clock,
-        List<(ulong, ExtrudedSymbolDescription)> symbolsIdsAndDescriptions) {
-      var symbolBarGameObject = Instantiate(symbolBarPrefab);
-      var symbolBarView = symbolBarGameObject.GetComponent<SymbolBarView>();
-      symbolBarView.Init(clock, this, symbolsIdsAndDescriptions);
-      return symbolBarView;
-    }
+    // public SymbolBarView CreateSymbolBarView(
+    //   IClock clock,
+    //     List<(ulong, ExtrudedSymbolDescription)> symbolsIdsAndDescriptions) {
+    //   var symbolBarGameObject = Instantiate(symbolBarPrefab);
+    //   var symbolBarView = symbolBarGameObject.GetComponent<SymbolBarView>();
+    //   symbolBarView.Init(clock, this, symbolsIdsAndDescriptions);
+    //   return symbolBarView;
+    // }
 
     // public DominoView CreateDominoView(
     //   IClock clock,

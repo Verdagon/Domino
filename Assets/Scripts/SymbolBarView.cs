@@ -13,16 +13,26 @@ namespace Domino {
     // private GameObject gameObject;
 
     private IClock clock;
-    private Instantiator instantiator;
+    private ILoader loader;
     private List<KeyValuePair<ulong, SymbolView>> symbolsIdsAndViews;
 
-    public void Init(
+    public static SymbolBarView Create(
+        IClock clock,
+        ILoader loader,
+        List<(ulong, ExtrudedSymbolDescription)> newSymbolsIdsAndDescriptions) {
+      var obj = loader.NewEmptyGameObject();
+      var symbolBarView = obj.AddComponent<SymbolBarView>();
+      symbolBarView.Init(clock, loader, newSymbolsIdsAndDescriptions);
+      return symbolBarView;
+    }
+    
+    private void Init(
       IClock clock,
-        Instantiator instantiator,
+        ILoader loader,
         List<(ulong, ExtrudedSymbolDescription)> newSymbolsIdsAndDescriptions) {
       this.initialized = true;
       this.clock = clock;
-      this.instantiator = instantiator;
+      this.loader = loader;
       this.symbolsIdsAndViews = new List<KeyValuePair<ulong, SymbolView>>();
       SetDescriptions(newSymbolsIdsAndDescriptions);
     }
@@ -54,7 +64,7 @@ namespace Domino {
 
       int i = 0;
       foreach (var entry in newSymbolsIdsAndDescriptions) {
-        var desiredSymbolView = instantiator.CreateSymbolView(clock, true, entry.Item2);
+        var desiredSymbolView = SymbolView.Create(clock, loader, true, entry.Item2);
         desiredSymbolView.gameObject.transform.SetParent(gameObject.transform, false);
         symbolsIdsAndViews.Add(new KeyValuePair<ulong, SymbolView>(entry.Item1, desiredSymbolView));
         SetSymbolViewPosition(entry.Item1, desiredSymbolView, i++);
@@ -122,7 +132,7 @@ namespace Domino {
       //      desiredSymbolView.SetDescription(desiredSymbolDescription);
       //    } else {
       //      // Then this is a completely new symbol. Let's make one and add it to the list.
-      //      desiredSymbolView = instantiator.CreateSymbolView(false, desiredSymbolDescription);
+      //      desiredSymbolView = loader.CreateSymbolView(false, desiredSymbolDescription);
       //      desiredSymbolView.gameObject.transform.SetParent(gameObject.transform, false);
       //      symbolsIdsAndViews.Add(new KeyValuePair<ulong, SymbolView>(desiredSymbolId, desiredSymbolView));
       //    }
@@ -158,7 +168,7 @@ namespace Domino {
       //symbolView.gameObject.transform.FromMatrix(matrix);
 
       symbolView.gameObject.transform.localScale =
-          new Vector3(-1 / 3f, 1 / 3f, -0.01f);
+          new Vector3(1 / 3f, 1 / 3f, 0.01f);
       symbolView.gameObject.transform.localPosition =
           new Vector3((index * 2 - 2) / 6.0f, 0, 0);
 

@@ -117,53 +117,6 @@ namespace Domino {
     }
   }
 
-  // class AddStringMessage : IDominoMessage {
-  //   public readonly List<ulong> newViewsIds;
-  //   // public readonly int panelId;
-  //   public readonly ulong parentViewId;
-  //   public readonly float x;
-  //   public readonly float y;
-  //   public readonly int maxWide;
-  //   public readonly Color color;
-  //   public readonly string fontName;
-  //   public readonly string str;
-  //
-  //   public AddStringMessage(
-  //       List<ulong> newViewsIds,
-  //       // int panelId,
-  //       ulong parentViewId,
-  //       float x,
-  //       float y,
-  //       int maxWide,
-  //       Color color,
-  //       string fontName,
-  //       string str) {
-  //     this.newViewsIds = newViewsIds;
-  //     // this.panelId = panelId;
-  //     this.parentViewId = parentViewId;
-  //     this.x = x;
-  //     this.y = y;
-  //     this.maxWide = maxWide;
-  //     this.color = color;
-  //     this.fontName = fontName;
-  //     this.str = str;
-  //   }
-  // }
-
-  // class AddBackgroundMessage : IDominoMessage {
-  //   public readonly ulong newViewId;
-  //   public readonly ulong parentViewId;
-  //   public readonly Color color;
-  //   public readonly Color borderColor;
-  //
-  //   public AddBackgroundMessage(ulong newViewId, ulong parentViewId, Color color, Color borderColor) {
-  //     this.newViewId = newViewId;
-  //     this.parentViewId = parentViewId;
-  //     this.color = color;
-  //     this.borderColor = borderColor;
-  //   }
-  // }
-
   class AddButtonMessage : IDominoMessage {
     public readonly ulong newViewId;
     public readonly ulong parentViewId;
@@ -208,18 +161,6 @@ namespace Domino {
       this.onClicked = onClicked;
       this.onMouseIn = onMouseIn;
       this.onMouseOut = onMouseOut;
-    }
-  }
-
-  class AddFullscreenRectMessage : IDominoMessage {
-    public readonly ulong newViewId;
-    public readonly ulong parentViewId;
-    public readonly Color color;
-
-    public AddFullscreenRectMessage(ulong newViewId, ulong parentViewId, Color color) {
-      this.newViewId = newViewId;
-      this.parentViewId = parentViewId;
-      this.color = color;
     }
   }
 
@@ -323,7 +264,7 @@ namespace Domino {
   }
   public class SetOverlayMessage : IDominoMessage {
     public readonly ulong tileViewId;
-    InitialSymbol maybeOverlay;
+    public readonly InitialSymbol maybeOverlay;
   
     public SetOverlayMessage(ulong tileViewId, InitialSymbol maybeOverlay) {
       this.tileViewId = tileViewId;
@@ -381,18 +322,41 @@ namespace Domino {
       this.tileViewId = tileViewId;
     }
   }
+  
   public class AddItemMessage : IDominoMessage {
     public readonly ulong tileViewId;
-    public readonly ulong id;
+    public readonly ulong itemId;
     public readonly InitialSymbol symbolDescription;
   
-    public AddItemMessage(ulong tileViewId, ulong id, InitialSymbol symbolDescription) {
+    public AddItemMessage(ulong tileViewId, ulong itemId, InitialSymbol symbolDescription) {
       this.tileViewId = tileViewId;
-      this.id = id;
+      this.itemId = itemId;
       this.symbolDescription = symbolDescription;
-  
     }
   }
+  
+  public class AddDetailMessage : IDominoMessage {
+    public readonly ulong unitViewId;
+    public readonly ulong detailId;
+    public readonly InitialSymbol symbolDescription;
+  
+    public AddDetailMessage(ulong unitViewId, ulong detailId, InitialSymbol symbolDescription) {
+      this.unitViewId = unitViewId;
+      this.detailId = detailId;
+      this.symbolDescription = symbolDescription;
+    }
+  }
+  
+  public class RemoveDetailMessage : IDominoMessage {
+    public readonly ulong unitViewId;
+    public readonly ulong detailId;
+  
+    public RemoveDetailMessage(ulong unitViewId, ulong detailId) {
+      this.unitViewId = unitViewId;
+      this.detailId = detailId;
+    }
+  }
+  
   public class DestroyTileMessage : IDominoMessage {
     public readonly ulong tileViewId;
     public DestroyTileMessage(ulong tileViewId) {

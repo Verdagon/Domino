@@ -97,6 +97,7 @@ namespace Domino {
     private GameObject outlineObject;
 
     private ILoader loader;
+    private bool centered;
 
     IVector4Animation frontColor;
     IVector4Animation sidesColor;
@@ -115,32 +116,36 @@ namespace Domino {
     public static SymbolView Create(
         IClock clock,
         ILoader loader,
+        bool centered,
         ExtrudedSymbolDescription symbolDescription) {
       var symbolViewObject = loader.NewEmptyGameObject();
       var symbolView = symbolViewObject.AddComponent<SymbolView>();
-      symbolView.Init(clock, loader, symbolDescription);
+      symbolView.Init(clock, loader, centered, symbolDescription);
       return symbolView;
     }
     
     private void Init(
         IClock clock,
         ILoader loader,
-        // // If true, z=0 will be the front of the symbol.
-        // // If false, z=0 will be the back of the symbol (only really makes sense for extruded symbols).
-        // bool originFront,
+        bool centered,
         ExtrudedSymbolDescription symbolDescription) {
       this.clock = clock;
       this.loader = loader;
       this.symbolDescription = symbolDescription;
+      this.centered = centered;
       
       var frontExtruded = symbolDescription.depth != 0 && !(symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
       faceObject = loader.NewQuad();
-      faceObject.GetComponent<MeshFilter>().sharedMesh =
-          loader.getSymbolMesh(new MeshParameters(symbolDescription.symbol.symbolId, false, frontExtruded));
+      var faceMesh = loader.getSymbolMesh(new MeshParameters(symbolDescription.symbol.symbolId, false, frontExtruded));
+      faceObject.GetComponent<MeshFilter>().sharedMesh = faceMesh;
       faceObject.transform.SetParent(gameObject.transform, false);
       faceObject.transform.localScale = new Vector3(1, 1, frontExtruded ? symbolDescription.depth : 0);
-      faceObject.transform.localPosition = new Vector3(0, 0, -symbolDescription.depth);
-      
+      var faceTranslate = centered ? new Vector3(-.5f, -.5f, 0) : new Vector3(0, 0, 0);
+      faceTranslate.z = -symbolDescription.depth;
+      faceObject.transform.localPosition = faceTranslate;
+
+      var outlineTranslate = faceTranslate;
+      outlineTranslate.z += 0.001f;
       if (symbolDescription.symbol.isOutlined == OutlineMode.OuterOutline) {
         var outlineExtruded = symbolDescription.depth != 0 && (symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
         outlineObject = loader.NewQuad();
@@ -148,7 +153,7 @@ namespace Domino {
         outlineObject.GetComponent<MeshFilter>().sharedMesh = mesh;
         outlineObject.GetComponent<MeshRenderer>().sharedMaterial = loader.black; 
         outlineObject.transform.SetParent(gameObject.transform, false);
-        outlineObject.transform.localPosition = new Vector3(0, 0, -symbolDescription.depth + 0.001f);
+        outlineObject.transform.localPosition = outlineTranslate;
         outlineObject.transform.localScale = new Vector3(1, 1, symbolDescription.depth); //outlineExtruded ? 1 : 0);
       } else if (symbolDescription.symbol.isOutlined == OutlineMode.CenteredOutline) {
         // var outlineExtruded = symbolDescription.extruded && (symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
@@ -157,7 +162,7 @@ namespace Domino {
         outlineObject.GetComponent<MeshFilter>().sharedMesh = mesh;
         outlineObject.GetComponent<MeshRenderer>().sharedMaterial = loader.black; 
         outlineObject.transform.SetParent(gameObject.transform, false);
-        outlineObject.transform.localPosition = new Vector3(0, 0, 0.001f);
+        outlineObject.transform.localPosition = outlineTranslate;
         outlineObject.transform.localScale = new Vector3(1, 1, symbolDescription.depth); //outlineExtruded ? 1 : 0);
       }
 

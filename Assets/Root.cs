@@ -84,7 +84,12 @@ public class Root : MonoBehaviour {
       } else if (message is CreateTileMessage ||
           message is SetSurfaceColorMessage ||
           message is SetCliffColorMessage ||
-          message is DestroyTileMessage) {
+          message is DestroyTileMessage ||
+          message is SetOverlayMessage ||
+          message is SetFeatureMessage ||
+          message is AddItemMessage ||
+          message is RemoveItemMessage ||
+          message is ClearItemsMessage) {
         terrainPresenter.HandleMessage(message);
       } else if (message is CreateUnitMessage ||
           message is DestroyUnitMessage) {
@@ -162,11 +167,11 @@ public class Root : MonoBehaviour {
     
     unitsPresenter.SetCameraDirection(cameraController.GetCurrentLookatOffsetToCamera());
 
-    bool ctrlDown = Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.RightControl);
-    bool leftAltDown = Input.GetKeyDown(KeyCode.LeftAlt);
-    bool rightAltDown = Input.GetKeyDown(KeyCode.RightAlt);
-    bool leftShiftDown = Input.GetKeyDown(KeyCode.LeftShift);
-    bool rightShiftDown = Input.GetKeyDown(KeyCode.RightShift);
+    bool ctrlDown = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+    bool leftAltDown = Input.GetKey(KeyCode.LeftAlt);
+    bool rightAltDown = Input.GetKey(KeyCode.RightAlt);
+    bool leftShiftDown = Input.GetKey(KeyCode.LeftShift);
+    bool rightShiftDown = Input.GetKey(KeyCode.RightShift);
 
     var keyCodes = new List<KeyCode> {
         KeyCode.Escape, KeyCode.Slash, KeyCode.Equals, KeyCode.Plus, KeyCode.Minus, KeyCode.Underscore, KeyCode.Delete

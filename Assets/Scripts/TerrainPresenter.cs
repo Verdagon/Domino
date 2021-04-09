@@ -85,8 +85,18 @@ namespace Geomancer {
         idToTilePresenters[setSurfaceColor.tileViewId].HandleMessage(message);
       } else if (message is SetElevationMessage setElevation) {
         idToTilePresenters[setElevation.tileViewId].HandleMessage(message);
+      } else if (message is SetOverlayMessage setOverlay) {
+        idToTilePresenters[setOverlay.tileViewId].HandleMessage(message);
+      } else if (message is SetFeatureMessage setFeature) {
+        idToTilePresenters[setFeature.tileViewId].HandleMessage(message);
       } else if (message is SetCliffColorMessage setCliffColor) {
         idToTilePresenters[setCliffColor.tileViewId].HandleMessage(message);
+      } else if (message is AddItemMessage addItem) {
+        idToTilePresenters[addItem.tileViewId].HandleMessage(message);
+      } else if (message is RemoveItemMessage removeItem) {
+        idToTilePresenters[removeItem.tileViewId].HandleMessage(message);
+      } else if (message is ClearItemsMessage clearItems) {
+        idToTilePresenters[clearItems.tileViewId].HandleMessage(message);
       } else {
         Asserts.Assert(false, message.GetType().Name);
       }

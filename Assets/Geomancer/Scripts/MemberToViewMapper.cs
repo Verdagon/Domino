@@ -140,7 +140,7 @@ namespace Geomancer {
           magma: {
             overlay: {
               symbol: {font: ""AthSymbols"", char: 114},
-              faceColor: [100, 100, 0, 380],
+              faceColor: [255, 100, 0, 380],
               sideColor: [50, 0, 0, 380]
             }
           },
@@ -151,13 +151,15 @@ namespace Geomancer {
                 symbol: {font: ""AthSymbols"", char: 120},
                 faceColor: [255, 255, 255, 380],
                 outlined: true,
-                depth: 5,
+                depth: 5
               }
             }
           },
           zeddy: {
             detail: {
               symbol: {font: ""AthSymbols"", char: 117},
+              outlined: true,
+              depth: 5
             }
           }
         }

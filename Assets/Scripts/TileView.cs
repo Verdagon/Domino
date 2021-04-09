@@ -238,10 +238,9 @@ namespace Domino {
           Asserts.Assert(false, "Item ID " + id + " already exists!");
         }
       }
-      Asserts.Assert(false);
-      // var itemSymbolView = instantiator.CreateSymbolView(clock, true, symbolDescription);
-      // itemSymbolViewByItemId.Add((id, itemSymbolView));
-      // UpdateItemPositions();
+      var itemSymbolView = SymbolView.Create(clock, loader, true, symbolDescription);
+      itemSymbolViewByItemId.Add((id, itemSymbolView));
+      UpdateItemPositions();
     }
 
     public void ClearItems() {
@@ -317,12 +316,11 @@ namespace Domino {
                 itemCenterXFromTileCenter,
                 .05f,
                 itemCenterYFromTileCenter);
-        itemSymbolView.gameObject.transform.localRotation =
-            Quaternion.Euler(new Vector3(-90, 0f, 0));
+        itemSymbolView.gameObject.transform.localRotation = Quaternion.Euler(new Vector3(90, 0f, 0));
         itemSymbolView.gameObject.transform.localScale =
           new Vector3(
-              -1 * itemRadius,
-              -1 * itemRadius,
+              itemRadius,
+              itemRadius,
               .1f);
 
         itemSymbolView.gameObject.transform.SetParent(transform, false);
@@ -388,7 +386,7 @@ namespace Domino {
         float lift = 0.04f;
         float scale = 0.7f;
         float forward = 0.2f;
-        var symbolView = SymbolView.Create(clock, loader, maybeFeature);
+        var symbolView = SymbolView.Create(clock, loader, false, maybeFeature);
         symbolView.gameObject.transform.SetParent(gameObject.transform, false);
         symbolView.gameObject.transform.localPosition = new Vector3(-scale/2, lift, -forward);
         symbolView.gameObject.transform.localRotation = Quaternion.AngleAxis(40, Vector3.right);
@@ -405,7 +403,7 @@ namespace Domino {
       if (this.maybeOverlay != null) {
         float lift = 0.01f;
         float scale = 0.707f;
-        var overlayView = SymbolView.Create(clock, loader, maybeOverlay);
+        var overlayView = SymbolView.Create(clock, loader, false, maybeOverlay);
         overlayView.gameObject.transform.SetParent(transform, false);
         overlayView.gameObject.transform.localPosition = new Vector3(-scale/2, lift, -scale/2);
         overlayView.gameObject.transform.localRotation = Quaternion.Euler(new Vector3(90, 0, 0));
