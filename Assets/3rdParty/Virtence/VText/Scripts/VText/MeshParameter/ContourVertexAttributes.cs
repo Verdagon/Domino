@@ -2,7 +2,7 @@
 
 namespace Virtence.VText
 {
-    internal struct ContourVertexAttributes
+    public struct ContourVertexAttributes
     {
         #region EXPOSED
 

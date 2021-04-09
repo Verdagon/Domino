@@ -309,7 +309,7 @@ namespace Geomancer {
               var symbol =
                   new SymbolDescription(
                       new SymbolId("AthSymbols", 0x0072),
-                      Vector4Animation.Color(1f, 1f, 1f, 0), 180, 1, OutlineMode.WithOutline, Vector4Animation.Color(1, 1, 1));
+                      Vector4Animation.Color(1f, 1f, 1f, 0), 180, 1, OutlineMode.OuterOutline, Vector4Animation.Color(1, 1, 1));
               symbolsAndDescriptions.Add(new KeyValuePair<SymbolDescription, string>(symbol, member));
             }
           }

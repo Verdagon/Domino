@@ -93,9 +93,9 @@ namespace Domino {
               initialSymbol.frontColor,
               initialSymbol.rotationDegrees,
               initialSymbol.sizePercent / 100f,
-              initialSymbol.outlined ? OutlineMode.WithOutline : OutlineMode.NoOutline,
+              initialSymbol.outlined ? OutlineMode.OuterOutline : OutlineMode.NoOutline,
               initialSymbol.outlineColor),
-          initialSymbol.depth > 0,
+          initialSymbol.depthPercent / 100f,
           initialSymbol.sidesColor);
     }
 

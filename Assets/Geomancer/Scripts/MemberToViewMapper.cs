@@ -149,7 +149,9 @@ namespace Geomancer {
               dominoColor: [255, 255, 0, 255],
               face: {
                 symbol: {font: ""AthSymbols"", char: 120},
-                faceColor: [200, 100, 0, 380]
+                faceColor: [255, 255, 255, 380],
+                outlined: true,
+                depth: 5,
               }
             }
           },
@@ -222,7 +224,7 @@ namespace Geomancer {
               ? newRotationDegrees : 0;
       int sizePercent =
           GetMaybeMemberInteger(obj, "sizePercent", out var newSizePercent)
-              ? newSizePercent : 0;
+              ? newSizePercent : 100;
       IVector4Animation faceColor =
           GetMaybeMemberColor(obj, "faceColor", out var newFrontColor)
               ? newFrontColor : Vector4Animation.WHITE;

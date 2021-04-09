@@ -6,7 +6,7 @@ namespace Domino {
     public readonly IVector4Animation frontColor;
     public readonly bool outlined;
     public readonly IVector4Animation outlineColor;
-    public readonly int depth;
+    public readonly int depthPercent;
     public readonly IVector4Animation sidesColor;
 
     public InitialSymbol(
@@ -16,7 +16,7 @@ namespace Domino {
         IVector4Animation frontColor,
         bool outlined,
         IVector4Animation outlineColor,
-        int depth,
+        int depthPercent,
         IVector4Animation sidesColor) {
       this.symbolId = symbolId;
       this.frontColor = frontColor;
@@ -25,7 +25,7 @@ namespace Domino {
       this.frontColor = frontColor;
       this.outlined = outlined;
       this.outlineColor = outlineColor;
-      this.depth = depth;
+      this.depthPercent = depthPercent;
       this.sidesColor = sidesColor;
 
       Asserts.Assert(outlineColor != null);

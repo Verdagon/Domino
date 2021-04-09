@@ -6,6 +6,7 @@
 // Author:       	Artur Bullert (artur.bullert@virtence.com)
 // ----------------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -17,7 +18,7 @@ namespace Virtence.VText
     /// Creates beautiuly 3D Mesh for a glyph
     /// </summary>
     [UnityEngine.Scripting.Preserve]
-	class VTextGlyphBuilder
+	public class VTextGlyphBuilder
     {
         #region FIELDS
 
@@ -185,6 +186,24 @@ namespace Virtence.VText
             //----------------------- uvs.xy == verts.xy (without z)
             meshAttribs.UVs = meshAttribs.Verticies.Select(v => new Vector2(v.x, v.y)).ToList();
             CalculateVertexAttributes(ref meshAttribs, tesselator.Contours);
+        }
+        
+        /// <summary>
+        /// Add the glyph face to mesh attribs
+        /// </summary>
+        /// <param name="meshAttribs"></param>
+        /// <param name="selectedChar"></param>
+        public List<Contour> GetContours(char selectedChar)
+        {
+            //----------------------- check typography glyph for early exit
+            var glyph = _font.GetGlyph(selectedChar);
+            if (glyph.Index == 0) {
+                throw new Exception("Current font does not contain a definition for '" + selectedChar + "'.");
+            }
+
+            var tesselator = new GlyphContourTesselator(_meshParameter.Resolution);
+            _pathBuilder.ApplyTesselator(ref tesselator, glyph);
+            return tesselator.Contours;
         }
 
         /// <summary>

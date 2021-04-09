@@ -9,7 +9,7 @@ namespace Virtence.VText
     /// Please note: all getter do not check verts.
     /// Utilize IsValid instead before using any methods
     /// </summary>
-    internal struct Contour
+    public struct Contour
     {
         private readonly Vector3[] verts;
 

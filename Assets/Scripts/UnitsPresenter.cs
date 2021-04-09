@@ -15,7 +15,7 @@ namespace Geomancer {
     ITimer timer;
     ILoader loader;
     private Vector3 lookatOffsetToCamera;
-    // private TileShapeMeshCache tileShapeMeshCache;
+    // private SymbolOutlineCache symbolOutlineCache;
     Dictionary<ulong, NetworkUnitPresenter> idToUnitPresenter = new Dictionary<ulong, NetworkUnitPresenter>();
     Dictionary<Location, HashSet<ulong>> locToUnitIds = new Dictionary<Location, HashSet<ulong>>();
     private IGetElevation getElevation;
@@ -30,7 +30,7 @@ namespace Geomancer {
         float elevationStepHeight,
         IGetElevation getElevation) {
       this.pattern = pattern;
-      // this.tileShapeMeshCache = new TileShapeMeshCache(pattern);
+      // this.symbolOutlineCache = new SymbolOutlineCache(5);
       this.server = server;
       this.clock = clock;
       this.timer = timer;

@@ -11,8 +11,8 @@ using Random = System.Random;
 namespace Domino {
   public enum OutlineMode {
     NoOutline = 0,
-    WithOutline = 1,
-    WithBackOutline = 2
+    OuterOutline = 1,
+    CenteredOutline = 2
   }
 
   public class SymbolDescription {
@@ -61,29 +61,24 @@ namespace Domino {
   public class ExtrudedSymbolDescription {
     public readonly RenderPriority renderPriority;
     public readonly SymbolDescription symbol;
-    public readonly bool extruded;
+    public readonly float depth;
     public readonly IVector4Animation sidesColor;
 
     public ExtrudedSymbolDescription(
         RenderPriority renderPriority,
         SymbolDescription symbol,
-        bool extruded,
+        float depth,
         IVector4Animation sidesColor) {
       this.renderPriority = renderPriority;
       this.symbol = symbol;
-      this.extruded = extruded;
+      this.depth = depth;
       this.sidesColor = sidesColor;
-    }
-
-    public ExtrudedSymbolDescription WithSymbol(SymbolDescription newSymbol) {
-      return new ExtrudedSymbolDescription(renderPriority, newSymbol, extruded, sidesColor);
-    }
-    public ExtrudedSymbolDescription WithSidesColor(IVector4Animation newSidesColor) {
-      return new ExtrudedSymbolDescription(renderPriority, symbol, extruded, newSidesColor);
     }
   }
 
   public class SymbolView : MonoBehaviour {
+    public const int CENTER_OUTLINE_INNER_RADIUS_PERCENT = 5;
+    
     public bool instanceAlive { get; private set; }
 
     private IClock clock;
@@ -138,22 +133,32 @@ namespace Domino {
       this.loader = loader;
       this.symbolDescription = symbolDescription;
       
-      var frontExtruded = symbolDescription.extruded && !(symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
+      var frontExtruded = symbolDescription.depth != 0 && !(symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
       faceObject = loader.NewQuad();
       faceObject.GetComponent<MeshFilter>().sharedMesh =
           loader.getSymbolMesh(new MeshParameters(symbolDescription.symbol.symbolId, false, frontExtruded));
       faceObject.transform.SetParent(gameObject.transform, false);
-      faceObject.transform.localScale = new Vector3(1, 1, frontExtruded ? 1 : 0);
+      faceObject.transform.localScale = new Vector3(1, 1, frontExtruded ? symbolDescription.depth : 0);
+      faceObject.transform.localPosition = new Vector3(0, 0, -symbolDescription.depth);
       
-      if (symbolDescription.symbol.isOutlined != OutlineMode.NoOutline) {
-        var outlineExtruded = symbolDescription.extruded && (symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
+      if (symbolDescription.symbol.isOutlined == OutlineMode.OuterOutline) {
+        var outlineExtruded = symbolDescription.depth != 0 && (symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
         outlineObject = loader.NewQuad();
         var mesh = loader.getSymbolMesh(new MeshParameters(symbolDescription.symbol.symbolId, true, outlineExtruded));
         outlineObject.GetComponent<MeshFilter>().sharedMesh = mesh;
         outlineObject.GetComponent<MeshRenderer>().sharedMaterial = loader.black; 
         outlineObject.transform.SetParent(gameObject.transform, false);
+        outlineObject.transform.localPosition = new Vector3(0, 0, -symbolDescription.depth + 0.001f);
+        outlineObject.transform.localScale = new Vector3(1, 1, symbolDescription.depth); //outlineExtruded ? 1 : 0);
+      } else if (symbolDescription.symbol.isOutlined == OutlineMode.CenteredOutline) {
+        // var outlineExtruded = symbolDescription.extruded && (symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
+        outlineObject = loader.NewQuad();
+        var mesh = loader.GetSymbolOutlineMesh(symbolDescription.symbol.symbolId, CENTER_OUTLINE_INNER_RADIUS_PERCENT);
+        outlineObject.GetComponent<MeshFilter>().sharedMesh = mesh;
+        outlineObject.GetComponent<MeshRenderer>().sharedMaterial = loader.black; 
+        outlineObject.transform.SetParent(gameObject.transform, false);
         outlineObject.transform.localPosition = new Vector3(0, 0, 0.001f);
-        outlineObject.transform.localScale = new Vector3(1, 1, 1); //outlineExtruded ? 1 : 0);
+        outlineObject.transform.localScale = new Vector3(1, 1, symbolDescription.depth); //outlineExtruded ? 1 : 0);
       }
 
       // this.renderPriority = symbolDescription.renderPriority;
@@ -165,6 +170,7 @@ namespace Domino {
 
       SetFrontColor(symbolDescription.symbol.frontColor);
       SetSidesColor(symbolDescription.sidesColor);
+      SetOutlineColor(symbolDescription.symbol.outlineColor);
       InnerSetScale(symbolDescription.symbol.scale);
       instanceAlive = true;
     }
@@ -193,6 +199,21 @@ namespace Domino {
           });
       animator.Set(newColor, symbolDescription.renderPriority);
       frontColor = newColor;
+    }
+
+    public void SetOutlineColor(IVector4Animation newColor) {
+      if (!ReferenceEquals(outlineObject, null)) {
+        var animator = Vec4Animator.MakeOrGetFrom(
+            clock, outlineObject.gameObject, new Vector4(0, 0, 0, 1), (vec4) => {
+              foreach (var meshRenderer in outlineObject.GetComponentsInChildren<MeshRenderer>()) {
+                var props = new MaterialPropertyBlock();
+                props.SetColor("_Color", new Color(vec4.x, vec4.y, vec4.z, vec4.w));
+                meshRenderer.SetPropertyBlock(props);
+              }
+            });
+        animator.Set(newColor, symbolDescription.renderPriority);
+      }
+      outlineColor = newColor;
     }
 
     public void SetSidesColor(IVector4Animation newColor) {
@@ -240,6 +261,42 @@ namespace Domino {
       // frontOutlineAnimator.Set(
       //   FadeAnimator.Fade(frontOutlineAnimator.Get(), clock.GetTimeMs(), durationMs),
       //   renderPriority);
+    }
+
+    public float GetMinY() {
+      float faceMin = faceObject.GetComponent<MeshFilter>().sharedMesh.bounds.min.y;
+      if (!ReferenceEquals(outlineObject, null)) {
+        float outlineMin = outlineObject.GetComponent<MeshFilter>().sharedMesh.bounds.min.y;
+        return Math.Min(faceMin, outlineMin);
+      }
+      return faceMin;
+    }
+    
+    public float GetMinZ() {
+      float faceMin = faceObject.GetComponent<MeshFilter>().sharedMesh.bounds.min.z;
+      if (!ReferenceEquals(outlineObject, null)) {
+        float outlineMin = outlineObject.GetComponent<MeshFilter>().sharedMesh.bounds.min.z;
+        return Math.Min(faceMin, outlineMin);
+      }
+      return faceMin;
+    }
+
+    public float GetMaxY() {
+      float faceMax = faceObject.GetComponent<MeshFilter>().sharedMesh.bounds.max.y;
+      if (!ReferenceEquals(outlineObject, null)) {
+        float outlineMax = outlineObject.GetComponent<MeshFilter>().sharedMesh.bounds.max.y;
+        return Math.Max(faceMax, outlineMax);
+      }
+      return faceMax;
+    }
+    
+    public float GetMaxZ() {
+      float faceMax = faceObject.GetComponent<MeshFilter>().sharedMesh.bounds.max.z;
+      if (!ReferenceEquals(outlineObject, null)) {
+        float outlineMax = outlineObject.GetComponent<MeshFilter>().sharedMesh.bounds.max.z;
+        return Math.Max(faceMax, outlineMax);
+      }
+      return faceMax;
     }
   }
 }

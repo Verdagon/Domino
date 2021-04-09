@@ -64,6 +64,8 @@ namespace Domino {
   }
 
   public class UnitView : MonoBehaviour {
+    private const int OUTLINE_THICKNESS = 3;
+    
     private static readonly long HOP_DURATION_MS = 300;
 
     ILoader loader;
@@ -81,18 +83,24 @@ namespace Domino {
     // public GameObject gameObject; (provided by unity)
 
     // Object for slightly translating the unit.
+    // Used for e.g. lunging animations. Usually Vec3(0,0,0
     // Lives inside this.gameObject.
     private GameObject offsetter;
 
-    // The object that contains the details bar and anything that's aligned to
+    // Inside the offsetter, this will lean the unit back to be more straight-on to the player.
+    private GameObject leaner;
+    
+    // Inside the leaner, this offsets things up, in case the domino goes below the ground, like tall dominos.
+    // This is so the things inside will be roughly around the top of the domino.
+    private GameObject lifter;
+
+    // Inside the lifter, contains the details bar and anything that's aligned to
     // the domino (details bar, symbol, everything else).
-    // Inside the offsetter; the offsetter exists to slightly translate this
-    // such as when we're lunging.
     private GameObject body;
 
     // The domino. Can either be the large or small one.
     // Lives inside this.body.
-    private DominoView dominoView;
+    private SymbolView dominoSymbolView;
 
     // The symbol on the domino's field.
     // Lives inside this.body.
@@ -167,40 +175,55 @@ namespace Domino {
       // gameObject.transform.position = basePosition;
 
       offsetter = loader.NewEmptyGameObject();
-      // offsetter.transform.localPosition = new Vector3(0, 0, 0);
       offsetter.transform.SetParent(gameObject.transform, false);
 
+      leaner = loader.NewEmptyGameObject();
+      leaner.transform.SetParent(offsetter.transform, false);
+      float leanDegrees = 50;
+      leaner.gameObject.transform.localRotation = Quaternion.Euler(new Vector3(leanDegrees, 0, 0));
+      leaner.gameObject.transform.localPosition = new Vector3(0, 0, -.2f);
+
+      lifter = loader.NewEmptyGameObject();
+      lifter.transform.SetParent(leaner.transform, false);
+
       body = loader.NewEmptyGameObject();
-      // body.transform.localPosition = new Vector3(0, 0, 0);
-      body.transform.SetParent(offsetter.transform, false);
+      body.transform.SetParent(lifter.transform, false);
 
-      // 0 .507 .1
-      // 40 0 0
-      // .55 0.8 1
-          
-      //body.transform.localRotation = Quaternion.FromToRotation(Vector3.back, cameraAngle);
+      dominoSymbolView =
+          SymbolView.Create(
+              clock,
+              loader,
+              new ExtrudedSymbolDescription(
+                  RenderPriority.DOMINO,
+                  new SymbolDescription(
+                      new SymbolId("AthSymbols", 0x007B),
+                      new MultiplyVector4Animation(
+                          Vector4Animation.RED,
+                          .6f),
+                      0,
+                      1,
+                      OutlineMode.CenteredOutline,
+                      Vector4Animation.RED),
+                  0,
+                  Vector4Animation.BLUE));
+      dominoSymbolView.gameObject.transform.SetParent(body.transform, false);
 
-      //float pitch = Vector3.Angle(-cameraAngle, Vector3.forward);
-      //float yaw = (float)(Math.Atan2(-cameraAngle.x, -cameraAngle.z) / Math.PI * 180);
-      //body.transform.localRotation = Quaternion.Euler(pitch, yaw, 0);
-
-
-      // body.transform.localScale = new Vector3(.8f, .8f, .8f);
-      // body.transform.localPosition = new Vector3(0, 0, -.25f);
-
-      dominoView = DominoView.Create(clock, loader, unitDescription.dominoDescription);
-      // dominoView.gameObject.transform.localPosition = new Vector3(0, 0, 0);
-      dominoView.gameObject.transform.SetParent(body.transform, false);
-
-      // var position = CalculatePosition(elevationStepHeight, pattern, location, elevation);
+      float minY = dominoSymbolView.GetMinY();
+      // // Right now the domino is half in the ground, let's bring it up a bit.
+      float lift = -minY;
+      lifter.gameObject.transform.localPosition = new Vector3(0, lift, 0);
+      
+      dominoSymbolView.gameObject.transform.localPosition = new Vector3(-.5f, 0, 0);
+      
+      
       
       RefreshPosition();
       RefreshRotation();
 
-      // faceSymbolView = SymbolView.Create(clock, loader, unitDescription.faceSymbolDescription);
-      // faceSymbolView.gameObject.transform.FromMatrix(
-      //     ScaleToAndCenterInTile(unitDescription.dominoDescription.large));
-      // faceSymbolView.gameObject.transform.SetParent(body.transform, false);
+      faceSymbolView = SymbolView.Create(clock, loader, unitDescription.faceSymbolDescription);
+      faceSymbolView.gameObject.transform.SetParent(body.transform, false);
+      faceSymbolView.gameObject.transform.localScale = new Vector3(.8f, .8f, .8f);
+      faceSymbolView.gameObject.transform.localPosition = new Vector3(-.4f, 0, -.001f);
 
       // if (unitDescription.detailSymbolDescriptionById.Count != 0) {
       //   symbolBarView = MakeSymbolBarView(clock, instantiator, unitDescription.detailSymbolDescriptionById, unitDescription.dominoDescription.large);
@@ -442,7 +465,8 @@ namespace Domino {
     }
 
     private void StartFadeAnimation(long durationMs) {
-      dominoView.Fade(durationMs);
+      // dominoView.Fade(durationMs);
+      Asserts.Assert(false);
 
       faceSymbolView.Fade(durationMs);
 
@@ -460,51 +484,6 @@ namespace Domino {
                       Matrix4x4.Translate(new Vector3(0, -.05f, 0)))));
     }
 
-    static Matrix4x4 ScaleToAndCenterInTile(bool inLargeTile) {
-      MatrixBuilder transform = new MatrixBuilder(Matrix4x4.identity);
-
-      // No idea why we need these. Something to do with how unity is retarded with
-      // importing .obj files.
-      transform.Scale(new Vector3(-1, 1, 1));
-      transform.Rotate(Quaternion.AngleAxis(180, Vector3.up));
-
-      // The tile is 0.7f x 0.7f x 0.1f.
-      // We want to maintain the ratio between X and Y.
-
-      // The symbol is currently ((-.5,-.5), (-1, 0), (.5,.5))
-      // We want it to be ((-.35,.35), (-.1,.1), (.35,.35))
-
-      // We want a .1 thickness symbol.
-      transform.Scale(new Vector3(1, 1, .1f));
-
-      // Now, since we want to fit things in 0.7,0.7 instead of 1.0,1.0, scale it down
-      // and nudge it over a bit.
-      transform.Scale(new Vector3(0.7f, 0.7f, 1.0f));
-
-      // The symbol is now ((-.35,-.35), (-.1, 0), (.35,.35))
-
-      transform.Translate(new Vector3(0, 0, -.05f));
-
-      transform.Translate(new Vector3(0, 0.5f, 0));
-
-
-      //// Tiles (0, 0) is at the center of the bottom edge, so we have to move
-      //// x over by 0.5 and z over by 0.05.
-      //transform.Translate(new Vector3(-0.5f, 0, -0.05f));
-      //// Now it's centered inside -0.35,0.15 to 0.35,0.85.
-
-      if (inLargeTile) {
-        // If we're in a large tile then bump it up by 0.5 in the y direction.
-        transform.Translate(new Vector3(0, 0.5f, 0));
-      }
-
-      //// Our ascii models don't agree with unity's left-handedness so we rotate around
-      //// the Y axis here.
-      //transform.Rotate(Quaternion.AngleAxis(180, new Vector3(0, 1, 0)));
-
-      return transform.matrix;
-    }
-    
     public void SetCameraDirection(Vector3 lookatOffsetToCamera) {
       this.lookatOffsetToCamera = lookatOffsetToCamera;
       RefreshRotation();
@@ -515,15 +494,11 @@ namespace Domino {
       var horizontalCameraDirection = lookatOffsetToCamera;//new Vector3(lookatOffsetToCamera.x, 0, lookatOffsetToCamera.z).normalized;
       horizontalCameraDirection.y = 0;
       horizontalCameraDirection = horizontalCameraDirection.normalized;
-      // var unitFacingDefaultDirection = new Vector3(0, 0, -1);
-      // float rotate =
-      //     (float)Math.Atan2(
-      //         horizontalCameraDirection.y - unitFacingDefaultDirection.y,
-      //         horizontalCameraDirection.x - unitFacingDefaultDirection.x);
       var angles = Quaternion.LookRotation(horizontalCameraDirection, Vector3.up).eulerAngles;
-      body.transform.localRotation = Quaternion.Euler(angles);
+      offsetter.transform.localRotation = Quaternion.Euler(angles);
       
-      body.transform.localScale = new Vector3(.8f, .8f, 1);
+      body.transform.localPosition = new Vector3(.1f, 0, 0);
+      body.transform.localScale = new Vector3(.8f, .8f, .8f);
     }
   }
 }
