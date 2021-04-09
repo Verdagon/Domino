@@ -112,7 +112,7 @@ namespace Geomancer {
       membersView = new ListView(domino, 0, 0, 40, 16);
       lookPanelView = new LookPanelView(domino, screenGW, -1, 2);
 
-      vivimap = MemberToViewMapper.LoadMap("vivimap.txt");
+      vivimap = MemberToViewMapper.LoadMap("vivimap.json");
       terrainPresenter = new TerrainController(domino, vivimap, terrain);
       terrainPresenter.PhantomTileClicked += HandlePhantomTileClicked;
       terrainPresenter.TerrainTileClicked += HandleTerrainTileClicked;
@@ -233,14 +233,14 @@ namespace Geomancer {
     }
 
     private void Save() {
-      using (var fileStream = new FileStream("level.athlev", FileMode.Create)) {
+      using (var fileStream = new FileStream("level.lev", FileMode.Create)) {
         using (var writer = new StreamWriter(fileStream)) {
           Save(writer);
         }
       }
 
       var timestamp = (int) new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-      using (var fileStream = new FileStream("level" + timestamp + ".athlev", FileMode.Create)) {
+      using (var fileStream = new FileStream("level" + timestamp + ".lev", FileMode.Create)) {
         using (var writer = new StreamWriter(fileStream)) {
           Save(writer);
         }

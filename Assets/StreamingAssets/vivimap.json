@@ -1,0 +1,74 @@
+{
+  grass: {
+    surfaceColor: [0, 75, 0],
+    wallColor: [0, 50, 0],
+  },
+  dirt: {
+    surfaceColor: [100, 32, 0],
+    wallColor: [64, 25, 0],
+  },
+  mud: {
+    surfaceColor: [50, 16, 0],
+    wallColor: [32, 12, 0],
+  },
+  rocks: {
+    overlay: {
+      symbol: {font: "AthSymbols", char: 102},
+      faceColor: [128, 128, 128, 50],
+      outlined: true
+    }
+  },
+  healthPotion: {
+    item: {
+      symbol: {font: "AthSymbols", char: 43},
+      faceColor: [200, 0, 200, 380]
+    }
+  },
+  manaPotion: {
+    item: {
+      symbol: {font: "AthSymbols", char: 44},
+      faceColor: [200, 0, 200, 380]
+    }
+  },
+  cave: {
+    feature: {
+      symbol: {font: "AthSymbols", char: 112},
+      faceColor: [200, 0, 200, 380],
+      outlined: true,
+      outlineColor: [255, 255, 255]
+      extruded: true,
+      sideColor: [255, 255, 255]
+    }
+  },
+  fire: {
+    feature: {
+      symbol: {font: "AthSymbols", char: 114},
+      faceColor: [200, 100, 0, 380]
+    }
+  },
+  magma: {
+    overlay: {
+      symbol: {font: "AthSymbols", char: 114},
+      faceColor: [255, 100, 0, 380],
+      sideColor: [50, 0, 0, 380]
+    }
+  },
+  avelisk: {
+    unit: {
+      dominoColor: [255, 255, 0, 255],
+      face: {
+        symbol: {font: "AthSymbols", char: 120},
+        faceColor: [255, 255, 255, 380],
+        outlined: true,
+        depth: 5
+      }
+    }
+  },
+  zeddy: {
+    detail: {
+      symbol: {font: "AthSymbols", char: 117},
+      outlined: true,
+      depth: 5
+    }
+  }
+}
