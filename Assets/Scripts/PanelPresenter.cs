@@ -83,9 +83,9 @@ namespace Geomancer {
             addButton.width,
             addButton.height,
             addButton.z,
-            addButton.color,
-            addButton.borderColor,
-            addButton.pressedColor,
+            addButton.color.ColorToUnity(),
+            addButton.borderColor.ColorToUnity(),
+            addButton.pressedColor.ColorToUnity(),
             () => server.TriggerEvent(addButton.onClicked),
             () => server.TriggerEvent(addButton.onMouseIn),
             () => server.TriggerEvent(addButton.onMouseOut));
@@ -104,8 +104,8 @@ namespace Geomancer {
             addRectangle.width,
             addRectangle.height,
             addRectangle.z,
-            addRectangle.color,
-            addRectangle.color);
+            addRectangle.color.ColorToUnity(),
+            addRectangle.color.ColorToUnity());
         viewIdToPanelId.Add(addRectangle.newViewId, panelId);
       // } else if (message is AddStringMessage addString) {
       //   Debug.Log(
@@ -127,7 +127,7 @@ namespace Geomancer {
       //   }
       } else if (message is AddSymbolMessage addSymbol) {
         Debug.Log(
-            $"AddSymbol newViewId {addSymbol.newViewId} parentViewId {addSymbol.parentViewId} x {addSymbol.x} y {addSymbol.y} size {addSymbol.size} z {addSymbol.z} color {addSymbol.color} symbol {addSymbol.symbol} centered {addSymbol.centered}");
+            $"AddSymbol newViewId {addSymbol.newViewId} parentViewId {addSymbol.parentViewId} x {addSymbol.x} y {addSymbol.y} size {addSymbol.size} z {addSymbol.z} color {addSymbol.color} symbol {addSymbol.symbolId} centered {addSymbol.centered}");
         
         var panelId = viewIdToPanelId[addSymbol.parentViewId];
         var panel = idToPanel[panelId];
@@ -138,8 +138,8 @@ namespace Geomancer {
             addSymbol.y,
             addSymbol.size,
             addSymbol.z,
-            addSymbol.color,
-            addSymbol.symbol);
+            addSymbol.color.ColorToUnity(),
+            addSymbol.symbolId);
         viewIdToPanelId.Add(addSymbol.newViewId, panelId);
       } else if (message is SetFadeInMessage fadeIn) {
         Debug.Log($"SetFadeIn id {fadeIn.id} fadeIn ...");

@@ -24,24 +24,24 @@ public class PatternTile : IComparable<PatternTile> {
   public readonly int rotateRadianards; // radianard means radians times 1000
   public readonly Vec2 translate;
   public readonly PatternSideAdjacencyImmList sideIndexToSideAdjacencies;
-  public readonly PatternCornerAdjacencyImmListImmList cornerAdjacenciesByCornerIndex;
+  public readonly PatternCornerAdjacencyImmListImmList cornerIndexToCornerAdjacencies;
   public PatternTile(
       int shapeIndex,
       int rotateRadianards,
       Vec2 translate,
       PatternSideAdjacencyImmList sideIndexToSideAdjacencies,
-      PatternCornerAdjacencyImmListImmList cornerAdjacenciesByCornerIndex) {
+      PatternCornerAdjacencyImmListImmList cornerIndexToCornerAdjacencies) {
     this.shapeIndex = shapeIndex;
     this.rotateRadianards = rotateRadianards;
     this.translate = translate;
     this.sideIndexToSideAdjacencies = sideIndexToSideAdjacencies;
-    this.cornerAdjacenciesByCornerIndex = cornerAdjacenciesByCornerIndex;
+    this.cornerIndexToCornerAdjacencies = cornerIndexToCornerAdjacencies;
     int hash = 0;
     hash = hash * 37 + shapeIndex;
     hash = hash * 37 + rotateRadianards;
     hash = hash * 37 + translate.GetDeterministicHashCode();
     hash = hash * 37 + sideIndexToSideAdjacencies.GetDeterministicHashCode();
-    hash = hash * 37 + cornerAdjacenciesByCornerIndex.GetDeterministicHashCode();
+    hash = hash * 37 + cornerIndexToCornerAdjacencies.GetDeterministicHashCode();
     this.hashCode = hash;
 
   }
@@ -68,7 +68,7 @@ public class PatternTile : IComparable<PatternTile> {
         && rotateRadianards.Equals(that.rotateRadianards)
         && translate.Equals(that.translate)
         && sideIndexToSideAdjacencies.Equals(that.sideIndexToSideAdjacencies)
-        && cornerAdjacenciesByCornerIndex.Equals(that.cornerAdjacenciesByCornerIndex)
+        && cornerIndexToCornerAdjacencies.Equals(that.cornerIndexToCornerAdjacencies)
         ;
   }
   public override int GetHashCode() {
@@ -88,8 +88,8 @@ public class PatternTile : IComparable<PatternTile> {
     if (sideIndexToSideAdjacencies != that.sideIndexToSideAdjacencies) {
       return sideIndexToSideAdjacencies.CompareTo(that.sideIndexToSideAdjacencies);
     }
-    if (cornerAdjacenciesByCornerIndex != that.cornerAdjacenciesByCornerIndex) {
-      return cornerAdjacenciesByCornerIndex.CompareTo(that.cornerAdjacenciesByCornerIndex);
+    if (cornerIndexToCornerAdjacencies != that.cornerIndexToCornerAdjacencies) {
+      return cornerIndexToCornerAdjacencies.CompareTo(that.cornerIndexToCornerAdjacencies);
     }
     return 0;
   }
@@ -100,7 +100,7 @@ public class PatternTile : IComparable<PatternTile> {
         rotateRadianards + ", " +
         translate + ", " +
         sideIndexToSideAdjacencies + ", " +
-        cornerAdjacenciesByCornerIndex
+        cornerIndexToCornerAdjacencies
         + ")";
 
     }
@@ -115,9 +115,9 @@ public class PatternTile : IComparable<PatternTile> {
       source.Expect(",");
       var sideIndexToSideAdjacencies = PatternSideAdjacencyImmList.Parse(source);
       source.Expect(",");
-      var cornerAdjacenciesByCornerIndex = PatternCornerAdjacencyImmListImmList.Parse(source);
+      var cornerIndexToCornerAdjacencies = PatternCornerAdjacencyImmListImmList.Parse(source);
       source.Expect(")");
-      return new PatternTile(shapeIndex, rotateRadianards, translate, sideIndexToSideAdjacencies, cornerAdjacenciesByCornerIndex);
+      return new PatternTile(shapeIndex, rotateRadianards, translate, sideIndexToSideAdjacencies, cornerIndexToCornerAdjacencies);
   }
 }
        

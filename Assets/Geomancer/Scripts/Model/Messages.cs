@@ -1,8 +1,34 @@
 using System.Collections.Generic;
 using Geomancer.Model;
-using UnityEngine;
 
 namespace Domino {
+  public class FadeIn {
+    public readonly long fadeInStartTimeMs;
+    public readonly long fadeInEndTimeMs;
+
+    public FadeIn(long fadeInStartTimeMs, long fadeInEndTimeMs) {
+      this.fadeInStartTimeMs = fadeInStartTimeMs;
+      this.fadeInEndTimeMs = fadeInEndTimeMs;
+
+      Asserts.Assert(fadeInStartTimeMs >= 0);
+      Asserts.Assert(fadeInEndTimeMs >= 0);
+    }
+  }
+  public class FadeOut {
+    public readonly long fadeOutStartTimeMs;
+    public readonly long fadeOutEndTimeMs;
+    public FadeOut(
+        long fadeOutStartTimeMs,
+        long fadeOutEndTimeMs) {
+      this.fadeOutStartTimeMs = fadeOutStartTimeMs;
+      this.fadeOutEndTimeMs = fadeOutEndTimeMs;
+
+      // These times are relative to when the overlay is destroyed.
+      Asserts.Assert(fadeOutStartTimeMs <= 0);
+      Asserts.Assert(fadeOutEndTimeMs <= 0);
+    }
+  }
+
   public interface IDominoMessage {
   }
 
@@ -25,11 +51,11 @@ namespace Domino {
   }
 
   public class CreateTileMessage : IDominoMessage {
-    public readonly ulong id;
+    public readonly ulong newTileId;
     public readonly InitialTile initialTile;
 
-    public CreateTileMessage(ulong id, InitialTile initialTile) {
-      this.id = id;
+    public CreateTileMessage(ulong newTileId, InitialTile initialTile) {
+      this.newTileId = newTileId;
       this.initialTile = initialTile;
     }
   }
@@ -65,7 +91,7 @@ namespace Domino {
     }
   }
 
-  class ScheduleCloseMessage : IDominoMessage {
+  public class ScheduleCloseMessage : IDominoMessage {
     public readonly ulong viewId;
     public readonly long startMsFromNow;
 
@@ -75,7 +101,7 @@ namespace Domino {
     }
   }
 
-  class RemoveViewMessage : IDominoMessage {
+  public class RemoveViewMessage : IDominoMessage {
     // public readonly ulong panelId;
     public readonly ulong viewId;
 
@@ -85,49 +111,49 @@ namespace Domino {
     }
   }
 
-  class SetOpacityMessage : IDominoMessage {
+  public class SetOpacityMessage : IDominoMessage {
     public readonly ulong viewId;
     public readonly int id;
-    public readonly float ratio;
+    public readonly int ratio;
 
-    public SetOpacityMessage(ulong viewId, int id, float ratio) {
+    public SetOpacityMessage(ulong viewId, int id, int ratio) {
       this.viewId = viewId;
       this.id = id;
       this.ratio = ratio;
     }
   }
 
-  class SetFadeOutMessage : IDominoMessage {
+  public class SetFadeOutMessage : IDominoMessage {
     public readonly ulong id;
-    public readonly OverlayPanelView.FadeOut fadeOut;
+    public readonly FadeOut fadeOut;
 
-    public SetFadeOutMessage(ulong id, OverlayPanelView.FadeOut fadeOut) {
+    public SetFadeOutMessage(ulong id, FadeOut fadeOut) {
       this.id = id;
       this.fadeOut = fadeOut;
     }
   }
 
-  class SetFadeInMessage : IDominoMessage {
+  public class SetFadeInMessage : IDominoMessage {
     public readonly ulong id;
-    public readonly OverlayPanelView.FadeIn fadeIn;
+    public readonly FadeIn fadeIn;
 
-    public SetFadeInMessage(ulong id, OverlayPanelView.FadeIn fadeIn) {
+    public SetFadeInMessage(ulong id, FadeIn fadeIn) {
       this.id = id;
       this.fadeIn = fadeIn;
     }
   }
 
-  class AddButtonMessage : IDominoMessage {
+  public class AddButtonMessage : IDominoMessage {
     public readonly ulong newViewId;
     public readonly ulong parentViewId;
-    public readonly float x;
-    public readonly float y;
-    public readonly float width;
-    public readonly float height;
+    public readonly int x;
+    public readonly int y;
+    public readonly int width;
+    public readonly int height;
     public readonly int z;
-    public readonly Color color;
-    public readonly Color borderColor;
-    public readonly Color pressedColor;
+    public readonly Vec4i color;
+    public readonly Vec4i borderColor;
+    public readonly Vec4i pressedColor;
     public readonly ulong onClicked;
     public readonly ulong onMouseIn;
     public readonly ulong onMouseOut;
@@ -136,14 +162,14 @@ namespace Domino {
         ulong newViewId,
         // int panelId,
         ulong parentViewId,
-        float x,
-        float y,
-        float width,
-        float height,
+        int x,
+        int y,
+        int width,
+        int height,
         int z,
-        Color color,
-        Color borderColor,
-        Color pressedColor,
+        Vec4i color,
+        Vec4i borderColor,
+        Vec4i pressedColor,
         ulong onClicked,
         ulong onMouseIn,
         ulong onMouseOut) {
@@ -164,27 +190,27 @@ namespace Domino {
     }
   }
 
-  class AddRectangleMessage : IDominoMessage {
+  public class AddRectangleMessage : IDominoMessage {
     public readonly ulong newViewId;
     public readonly ulong parentViewId;
-    public readonly float x;
-    public readonly float y;
-    public readonly float width;
-    public readonly float height;
+    public readonly int x;
+    public readonly int y;
+    public readonly int width;
+    public readonly int height;
     public readonly int z;
-    public readonly Color color;
-    public readonly Color borderColor;
+    public readonly Vec4i color;
+    public readonly Vec4i borderColor;
 
     public AddRectangleMessage(
         ulong newViewId,
         ulong parentViewId,
-        float x,
-        float y,
-        float width,
-        float height,
+        int x,
+        int y,
+        int width,
+        int height,
         int z,
-        Color color,
-        Color borderColor) {
+        Vec4i color,
+        Vec4i borderColor) {
       this.newViewId = newViewId;
       this.parentViewId = parentViewId;
       this.x = x;
@@ -197,26 +223,26 @@ namespace Domino {
     }
   }
 
-  class AddSymbolMessage : IDominoMessage {
+  public class AddSymbolMessage : IDominoMessage {
     public readonly ulong newViewId;
     public readonly ulong parentViewId;
-    public readonly float x;
-    public readonly float y;
-    public readonly float size;
+    public readonly int x;
+    public readonly int y;
+    public readonly int size;
     public readonly int z;
-    public readonly Color color;
-    public readonly SymbolId symbol;
+    public readonly Vec4i color;
+    public readonly SymbolId symbolId;
     public readonly bool centered;
 
     public AddSymbolMessage(
         ulong newViewId,
         ulong parentViewId,
-        float x,
-        float y,
-        float size,
+        int x,
+        int y,
+        int size,
         int z,
-        Color color,
-        SymbolId symbol,
+        Vec4i color,
+        SymbolId symbolId,
         bool centered) {
       this.newViewId = newViewId;
       this.parentViewId = parentViewId;
@@ -225,7 +251,7 @@ namespace Domino {
       this.size = size;
       this.z = z;
       this.color = color;
-      this.symbol = symbol;
+      this.symbolId = symbolId;
       this.centered = centered;
     }
   }
@@ -254,46 +280,46 @@ namespace Domino {
     }
   }
   public class ShowRuneMessage : IDominoMessage {
-    public readonly ulong tileViewId;
-    public readonly InitialSymbol runeSymbolDescription;
+    public readonly ulong tileId;
+    public readonly InitialSymbol symbol;
   
-    public ShowRuneMessage(ulong tileViewId, InitialSymbol runeSymbolDescription) {
-      this.tileViewId = tileViewId;
-      this.runeSymbolDescription = runeSymbolDescription; 
+    public ShowRuneMessage(ulong tileId, InitialSymbol symbol) {
+      this.tileId = tileId;
+      this.symbol = symbol; 
     }
   }
   public class SetOverlayMessage : IDominoMessage {
-    public readonly ulong tileViewId;
-    public readonly InitialSymbol maybeOverlay;
+    public readonly ulong tileId;
+    public readonly InitialSymbol symbol;
   
-    public SetOverlayMessage(ulong tileViewId, InitialSymbol maybeOverlay) {
-      this.tileViewId = tileViewId;
-      this.maybeOverlay = maybeOverlay; 
+    public SetOverlayMessage(ulong tileId, InitialSymbol symbol) {
+      this.tileId = tileId;
+      this.symbol = symbol; 
     }
   }
   public class SetFeatureMessage : IDominoMessage {
-    public readonly ulong tileViewId;
-    public readonly InitialSymbol maybeFeature;
+    public readonly ulong tileId;
+    public readonly InitialSymbol symbol;
   
-    public SetFeatureMessage(ulong tileViewId, InitialSymbol maybeFeature) {
-      this.tileViewId = tileViewId;
-      this.maybeFeature = maybeFeature; 
+    public SetFeatureMessage(ulong tileId, InitialSymbol symbol) {
+      this.tileId = tileId;
+      this.symbol = symbol; 
     }
   }
   public class SetCliffColorMessage : IDominoMessage {
     public readonly ulong tileViewId;
-    public readonly IVector4Animation sideColor;
+    public readonly IVec4iAnimation sideColor;
   
-    public SetCliffColorMessage(ulong tileViewId, IVector4Animation sideColor) {
+    public SetCliffColorMessage(ulong tileViewId, IVec4iAnimation sideColor) {
       this.tileViewId = tileViewId;
       this.sideColor = sideColor; 
     }
   }
   public class SetSurfaceColorMessage : IDominoMessage {
     public readonly ulong tileViewId;
-    public readonly IVector4Animation frontColor;
+    public readonly IVec4iAnimation frontColor;
   
-    public SetSurfaceColorMessage(ulong tileViewId, IVector4Animation frontColor) {
+    public SetSurfaceColorMessage(ulong tileViewId, IVec4iAnimation frontColor) {
       this.tileViewId = tileViewId;
       this.frontColor = frontColor;
     }
@@ -364,9 +390,9 @@ namespace Domino {
     }
   }
   public class DestroyUnitMessage : IDominoMessage {
-    public readonly ulong unitViewId;
-    public DestroyUnitMessage(ulong unitViewId) {
-      this.unitViewId = unitViewId;
+    public readonly ulong unitId;
+    public DestroyUnitMessage(ulong unitId) {
+      this.unitId = unitId;
     }
   }
 }

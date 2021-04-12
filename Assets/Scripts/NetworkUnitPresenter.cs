@@ -70,39 +70,18 @@ namespace Domino {
       // var patternUnit = pattern.patternUnits[location.indexInGroup];
       // float rotateDegrees = patternUnit.rotateRadianards / 1000f * 180f / (float) Math.PI;
       return new UnitDescription(
-          new DominoDescription(
-              initialUnit.shape == DominoShape.TALL_DOMINO,
-              initialUnit.color),
-          TranslateMaybeInitialSymbol(RenderPriority.DOMINO, initialUnit.faceSymbolDescription),
-          TranslateInitialSymbolMap(RenderPriority.DOMINO, initialUnit.detailSymbolDescriptionById),
+          Translation.TranslateMaybeInitialSymbol(RenderPriority.DOMINO, initialUnit.dominoSymbol),
+          Translation.TranslateMaybeInitialSymbol(RenderPriority.DOMINO, initialUnit.faceSymbol),
+          TranslateInitialSymbolMap(RenderPriority.DOMINO, initialUnit.idToDetailSymbol),
           initialUnit.hpRatio,
           initialUnit.mpRatio);
-    }
-
-    private static ExtrudedSymbolDescription TranslateMaybeInitialSymbol(
-        RenderPriority renderPriority,
-        InitialSymbol initialSymbol) {
-      if (initialSymbol == null) {
-        return null;
-      }
-      return new ExtrudedSymbolDescription(
-          renderPriority,
-          new SymbolDescription(
-              initialSymbol.symbolId,
-              initialSymbol.frontColor,
-              initialSymbol.rotationDegrees,
-              initialSymbol.sizePercent / 100f,
-              initialSymbol.outlined ? OutlineMode.OuterOutline : OutlineMode.NoOutline,
-              initialSymbol.outlineColor),
-          initialSymbol.depthPercent / 100f,
-          initialSymbol.sidesColor);
     }
 
     private static List<(ulong, ExtrudedSymbolDescription)> TranslateInitialSymbolMap(
         RenderPriority renderPriority, List<(ulong, InitialSymbol)> idToSymbol) {
       var result = new List<(ulong, ExtrudedSymbolDescription)>();
       foreach (var (id, initialSymbol) in idToSymbol) {
-        result.Add((id, TranslateMaybeInitialSymbol(renderPriority, initialSymbol)));
+        result.Add((id, Translation.TranslateMaybeInitialSymbol(renderPriority, initialSymbol)));
       }
       return result;
     }

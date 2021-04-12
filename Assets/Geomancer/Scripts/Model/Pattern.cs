@@ -21,24 +21,24 @@ public class Pattern : IComparable<Pattern> {
   }
   private readonly int hashCode;
          public readonly string name;
-  public readonly Vec2ImmListImmList cornersByShapeIndex;
+  public readonly Vec2ImmListImmList shapeIndexToCorners;
   public readonly PatternTileImmList patternTiles;
   public readonly Vec2 xOffset;
   public readonly Vec2 yOffset;
   public Pattern(
       string name,
-      Vec2ImmListImmList cornersByShapeIndex,
+      Vec2ImmListImmList shapeIndexToCorners,
       PatternTileImmList patternTiles,
       Vec2 xOffset,
       Vec2 yOffset) {
     this.name = name;
-    this.cornersByShapeIndex = cornersByShapeIndex;
+    this.shapeIndexToCorners = shapeIndexToCorners;
     this.patternTiles = patternTiles;
     this.xOffset = xOffset;
     this.yOffset = yOffset;
     int hash = 0;
     hash = hash * 37 + name.GetDeterministicHashCode();
-    hash = hash * 37 + cornersByShapeIndex.GetDeterministicHashCode();
+    hash = hash * 37 + shapeIndexToCorners.GetDeterministicHashCode();
     hash = hash * 37 + patternTiles.GetDeterministicHashCode();
     hash = hash * 37 + xOffset.GetDeterministicHashCode();
     hash = hash * 37 + yOffset.GetDeterministicHashCode();
@@ -65,7 +65,7 @@ public class Pattern : IComparable<Pattern> {
     var that = obj as Pattern;
     return true
                && name.Equals(that.name)
-        && cornersByShapeIndex.Equals(that.cornersByShapeIndex)
+        && shapeIndexToCorners.Equals(that.shapeIndexToCorners)
         && patternTiles.Equals(that.patternTiles)
         && xOffset.Equals(that.xOffset)
         && yOffset.Equals(that.yOffset)
@@ -79,8 +79,8 @@ public class Pattern : IComparable<Pattern> {
     if (name != that.name) {
       return name.CompareTo(that.name);
     }
-    if (cornersByShapeIndex != that.cornersByShapeIndex) {
-      return cornersByShapeIndex.CompareTo(that.cornersByShapeIndex);
+    if (shapeIndexToCorners != that.shapeIndexToCorners) {
+      return shapeIndexToCorners.CompareTo(that.shapeIndexToCorners);
     }
     if (patternTiles != that.patternTiles) {
       return patternTiles.CompareTo(that.patternTiles);
@@ -97,7 +97,7 @@ public class Pattern : IComparable<Pattern> {
   public string DStr() {
     return "Pattern(" +
         name.DStr() + ", " +
-        cornersByShapeIndex.DStr() + ", " +
+        shapeIndexToCorners.DStr() + ", " +
         patternTiles.DStr() + ", " +
         xOffset.DStr() + ", " +
         yOffset.DStr()
@@ -109,7 +109,7 @@ public class Pattern : IComparable<Pattern> {
       source.Expect("(");
       var name = source.ParseStr();
       source.Expect(",");
-      var cornersByShapeIndex = Vec2ImmListImmList.Parse(source);
+      var shapeIndexToCorners = Vec2ImmListImmList.Parse(source);
       source.Expect(",");
       var patternTiles = PatternTileImmList.Parse(source);
       source.Expect(",");
@@ -117,7 +117,7 @@ public class Pattern : IComparable<Pattern> {
       source.Expect(",");
       var yOffset = Vec2.Parse(source);
       source.Expect(")");
-      return new Pattern(name, cornersByShapeIndex, patternTiles, xOffset, yOffset);
+      return new Pattern(name, shapeIndexToCorners, patternTiles, xOffset, yOffset);
   }
     
     
@@ -139,7 +139,7 @@ public class Pattern : IComparable<Pattern> {
       var patternTile = patternTiles[loc.indexInGroup];
       int shapeIndex = patternTile.shapeIndex;
       double rotateRadians = patternTile.rotateRadianards / 1000f;
-      var corners = cornersByShapeIndex[shapeIndex];
+      var corners = shapeIndexToCorners[shapeIndex];
 
       List<Vec2> results = new List<Vec2>();
 
@@ -180,7 +180,7 @@ public class Pattern : IComparable<Pattern> {
         }
       }
       if (adjacentCornersToo) {
-        foreach (var cornerAdjacencies in tile.cornerAdjacenciesByCornerIndex) {
+        foreach (var cornerAdjacencies in tile.cornerIndexToCornerAdjacencies) {
           foreach (var cornerAdjacency in cornerAdjacencies) {
             var location = new Location(cornerAdjacency.groupRelativeX, cornerAdjacency.groupRelativeY, cornerAdjacency.tileIndex);
             if (!result.ContainsKey(location)) {

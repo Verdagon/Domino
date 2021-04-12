@@ -1,14 +1,17 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Domino;
 using Geomancer;
 using Geomancer.Model;
 using UnityEngine;
+using UnityEngine.Networking;
 
 
 public class Root : MonoBehaviour {
   private Camera camera;
   private Canvas canvas;
+  private Requester requester;
   private OverlayPaneler overlayPaneler;
   private CameraController cameraController;
   private SlowableTimerClock clock;
@@ -29,10 +32,12 @@ public class Root : MonoBehaviour {
   }
 
   void AfterLoaded() {
-    server = new DominoToGameConnection();
-
     camera = GetComponentInChildren<Camera>();
     canvas = GetComponentInChildren<Canvas>();
+
+    requester = gameObject.AddComponent<Requester>();
+
+    server = new DominoToGameConnection(requester, "http://127.0.0.1:8080", HandleMessage);
 
     clock = new SlowableTimerClock(1.0f);
 
@@ -52,85 +57,90 @@ public class Root : MonoBehaviour {
     finishedStartMethod = true;
   }
 
+  private void HandleMessage(IDominoMessage message) {
+
+    if (message is SetupGameMessage setupGame) {
+      Debug.Log(
+          $"SetupGameMessage cameraPosition {setupGame.cameraPosition.ToUnity()} lookatOffsetToCamera {setupGame.lookatOffsetToCamera.ToUnity()} elevationStepHeight {setupGame.elevationStepHeight} pattern {setupGame.pattern}");
+      cameraController.StartRotatingCameraTo(setupGame.lookatOffsetToCamera.ToUnity(), 1000);
+      elevationStepHeight = setupGame.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier;
+      pattern = setupGame.pattern;
+      terrainPresenter = new TerrainPresenter(server, clock, clock, loader, pattern, elevationStepHeight);
+      unitsPresenter =
+          new UnitsPresenter(
+              server,
+              clock,
+              clock,
+              loader,
+              pattern,
+              cameraController.targetLookatOffsetToCamera,
+              elevationStepHeight,
+              loc => terrainPresenter.GetElevation(loc));
+      // setupGame.cameraPosition;
+    } else if (message is SetElevationMessage setElevation) {
+      terrainPresenter.SetElevation(setElevation.tileViewId, setElevation.elevation);
+      unitsPresenter.RefreshElevation(terrainPresenter.GetLocation(setElevation.tileViewId));
+    } else if (message is CreateTileMessage ||
+        message is SetSurfaceColorMessage ||
+        message is SetCliffColorMessage ||
+        message is DestroyTileMessage ||
+        message is SetOverlayMessage ||
+        message is SetFeatureMessage ||
+        message is AddItemMessage ||
+        message is RemoveItemMessage ||
+        message is ClearItemsMessage) {
+      terrainPresenter.HandleMessage(message);
+    } else if (message is CreateUnitMessage ||
+        message is DestroyUnitMessage) {
+      unitsPresenter.HandleMessage(message);
+
+      // var location = createUnit.initialUnit.location;
+      // var position = pattern.GetTileCenter(location).ToVec3().ToUnity();
+      // position.y += createUnit.initialUnit.elevation * elevationStepHeight;
+      // UnitView.Create(
+      //     loader, clock, clock, position,
+      //     new UnitDescription(
+      //         new DominoDescription(true, Vector4Animation.RED),
+      //         new ExtrudedSymbolDescription(
+      //             RenderPriority.DOMINO,
+      //             new SymbolDescription(
+      //                 new SymbolId("AthSymbols", 0x006A),
+      //                 Vector4Animation.BLUE,
+      //                 0,
+      //                 0,
+      //                 OutlineMode.WithOutline),
+      //             true,
+      //             Vector4Animation.PINK),
+      //         new List<(ulong, ExtrudedSymbolDescription)>(),
+      //         1,
+      //         1),
+      //     new Vector3(0, -1, 0));
+    } else if (message is MakePanelMessage ||
+        message is ScheduleCloseMessage ||
+        message is AddRectangleMessage ||
+        // message is AddStringMessage ||
+        message is AddSymbolMessage ||
+        message is RemoveViewMessage ||
+        message is SetFadeInMessage ||
+        message is SetFadeOutMessage ||
+        message is AddButtonMessage) {
+      panelPresenter.HandleMessage(message);
+    } else {
+      Debug.LogWarning("Ignoring: " + message.GetType().Name);
+    }
+  }
+
   public void Update() {
     if (!finishedStartMethod) {
       // There was probably an error in the logs that said why we're not loaded
       return;
     }
-
-    var messages = server.TakeMessages();
-    foreach (var message in messages) {
-      if (message is SetupGameMessage setupGame) {
-        Debug.Log(
-            $"SetupGameMessage cameraPosition {setupGame.cameraPosition.ToUnity()} lookatOffsetToCamera {setupGame.lookatOffsetToCamera.ToUnity()} elevationStepHeight {setupGame.elevationStepHeight} pattern {setupGame.pattern}");
-        cameraController.StartRotatingCameraTo(setupGame.lookatOffsetToCamera.ToUnity(), 1000);
-        elevationStepHeight = setupGame.elevationStepHeight * ModelExtensions.ModelToUnityMultiplier;
-        pattern = setupGame.pattern;
-        terrainPresenter = new TerrainPresenter(server, clock, clock, loader, pattern, elevationStepHeight);
-        unitsPresenter =
-            new UnitsPresenter(
-                server,
-                clock,
-                clock,
-                loader,
-                pattern,
-                cameraController.targetLookatOffsetToCamera,
-                elevationStepHeight,
-                loc => terrainPresenter.GetElevation(loc));
-        // setupGame.cameraPosition;
-      } else if (message is SetElevationMessage setElevation) {
-        terrainPresenter.SetElevation(setElevation.tileViewId, setElevation.elevation);
-        unitsPresenter.RefreshElevation(terrainPresenter.GetLocation(setElevation.tileViewId));
-      } else if (message is CreateTileMessage ||
-          message is SetSurfaceColorMessage ||
-          message is SetCliffColorMessage ||
-          message is DestroyTileMessage ||
-          message is SetOverlayMessage ||
-          message is SetFeatureMessage ||
-          message is AddItemMessage ||
-          message is RemoveItemMessage ||
-          message is ClearItemsMessage) {
-        terrainPresenter.HandleMessage(message);
-      } else if (message is CreateUnitMessage ||
-          message is DestroyUnitMessage) {
-        unitsPresenter.HandleMessage(message);
-        
-        // var location = createUnit.initialUnit.location;
-        // var position = pattern.GetTileCenter(location).ToVec3().ToUnity();
-        // position.y += createUnit.initialUnit.elevation * elevationStepHeight;
-        // UnitView.Create(
-        //     loader, clock, clock, position,
-        //     new UnitDescription(
-        //         new DominoDescription(true, Vector4Animation.RED),
-        //         new ExtrudedSymbolDescription(
-        //             RenderPriority.DOMINO,
-        //             new SymbolDescription(
-        //                 new SymbolId("AthSymbols", 0x006A),
-        //                 Vector4Animation.BLUE,
-        //                 0,
-        //                 0,
-        //                 OutlineMode.WithOutline),
-        //             true,
-        //             Vector4Animation.PINK),
-        //         new List<(ulong, ExtrudedSymbolDescription)>(),
-        //         1,
-        //         1),
-        //     new Vector3(0, -1, 0));
-      } else if (message is MakePanelMessage ||
-          message is ScheduleCloseMessage ||
-          message is AddRectangleMessage ||
-          // message is AddStringMessage ||
-          message is AddSymbolMessage ||
-          message is RemoveViewMessage ||
-          message is SetFadeInMessage ||
-          message is SetFadeOutMessage ||
-          message is AddButtonMessage) {
-        panelPresenter.HandleMessage(message);
-      } else {
-        Debug.LogWarning("Ignoring: " + message.GetType().Name);
-      }
+    if (unitsPresenter == null) {
+      return;
     }
-
+    if (terrainPresenter == null) {
+      return;
+    }
 
     clock.Update();
 
@@ -194,5 +204,4 @@ public class Root : MonoBehaviour {
     UnityEngine.Ray ray = camera.ScreenPointToRay(Input.mousePosition);
     terrainPresenter.UpdateMouse(ray);
   }
-
 }

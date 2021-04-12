@@ -36,33 +36,6 @@ namespace Domino {
       }
     }
 
-    public class FadeIn {
-      public readonly long fadeInStartTimeMs;
-      public readonly long fadeInEndTimeMs;
-
-      public FadeIn(long fadeInStartTimeMs, long fadeInEndTimeMs) {
-        this.fadeInStartTimeMs = fadeInStartTimeMs;
-        this.fadeInEndTimeMs = fadeInEndTimeMs;
-
-        Asserts.Assert(fadeInStartTimeMs >= 0);
-        Asserts.Assert(fadeInEndTimeMs >= 0);
-      }
-    }
-    public class FadeOut {
-      public readonly long fadeOutStartTimeMs;
-      public readonly long fadeOutEndTimeMs;
-      public FadeOut(
-          long fadeOutStartTimeMs,
-          long fadeOutEndTimeMs) {
-        this.fadeOutStartTimeMs = fadeOutStartTimeMs;
-        this.fadeOutEndTimeMs = fadeOutEndTimeMs;
-
-        // These times are relative to when the overlay is destroyed.
-        Asserts.Assert(fadeOutStartTimeMs <= 0);
-        Asserts.Assert(fadeOutEndTimeMs <= 0);
-      }
-    }
-
     public delegate void OnClicked();
 
     ILoader loader;

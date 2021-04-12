@@ -20,14 +20,14 @@ namespace Domino {
     public (Mesh, Mesh) Get(int shapeIndex, float tileHeight, float outlineThickness) {
       if (shapeIndexToMesh[shapeIndex].Item1 == null) {
         var topCorners = new List<Vector3>();
-        if (shapeIndex >= pattern.cornersByShapeIndex.Count) {
+        if (shapeIndex >= pattern.shapeIndexToCorners.Count) {
           throw new Exception("Shape index " + shapeIndex + " doesn't exist!");
         }
         
-        for (int i = 0; i < pattern.cornersByShapeIndex[shapeIndex].Count; i++) {
+        for (int i = 0; i < pattern.shapeIndexToCorners[shapeIndex].Count; i++) {
           // Reverse; the patterns are right handed but unity is left handed
           // so this reversal should make it clockwise instead of counterclockwise
-          var cornerVec2 = pattern.cornersByShapeIndex[shapeIndex][pattern.cornersByShapeIndex[shapeIndex].Count - 1 - i];
+          var cornerVec2 = pattern.shapeIndexToCorners[shapeIndex][pattern.shapeIndexToCorners[shapeIndex].Count - 1 - i];
           topCorners.Add(new Vec3(cornerVec2.x, cornerVec2.y, 0).ToUnity());
         }
         

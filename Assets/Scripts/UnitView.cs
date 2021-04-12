@@ -7,19 +7,19 @@ using UnityEngine;
 
 namespace Domino {
   public class UnitDescription {
-    public readonly DominoDescription dominoDescription;
+    public readonly ExtrudedSymbolDescription dominoSymbolDescription;
     public readonly ExtrudedSymbolDescription faceSymbolDescription;
     public readonly List<(ulong, ExtrudedSymbolDescription)> detailSymbolDescriptionById;
     public readonly float hpRatio;
     public readonly float mpRatio;
   
     public UnitDescription(
-        DominoDescription dominoDescription,
+        ExtrudedSymbolDescription dominoSymbolDescription,
         ExtrudedSymbolDescription faceSymbolDescription,
         List<(ulong, ExtrudedSymbolDescription)> detailSymbolDescriptionById,
         float hpRatio,
         float mpRatio) {
-      this.dominoDescription = dominoDescription;
+      this.dominoSymbolDescription = dominoSymbolDescription;
       this.faceSymbolDescription = faceSymbolDescription;
       this.detailSymbolDescriptionById = detailSymbolDescriptionById;
       this.hpRatio = hpRatio;
@@ -31,7 +31,7 @@ namespace Domino {
       if (!(obj is UnitDescription))
         return false;
       UnitDescription that = obj as UnitDescription;
-      if (!dominoDescription.Equals(that.dominoDescription))
+      if (!dominoSymbolDescription.Equals(that.dominoSymbolDescription))
         return false;
       if (!faceSymbolDescription.Equals(that.faceSymbolDescription))
         return false;
@@ -51,7 +51,7 @@ namespace Domino {
     }
     public override int GetHashCode() {
       int hashCode = 0;
-      hashCode += 17 * dominoDescription.GetHashCode();
+      hashCode += 17 * dominoSymbolDescription.GetHashCode();
       hashCode += 33 * faceSymbolDescription.GetHashCode();
       hashCode += 53 * detailSymbolDescriptionById.Count;
       foreach (var detailSymbolDescription in detailSymbolDescriptionById) {
@@ -194,19 +194,7 @@ namespace Domino {
               clock,
               loader,
               false,
-              new ExtrudedSymbolDescription(
-                  RenderPriority.DOMINO,
-                  new SymbolDescription(
-                      new SymbolId("AthSymbols", 0x007B),
-                      new MultiplyVector4Animation(
-                          Vector4Animation.RED,
-                          .6f),
-                      0,
-                      1,
-                      OutlineMode.CenteredOutline,
-                      Vector4Animation.RED),
-                  0,
-                  Vector4Animation.BLUE));
+              unitDescription.dominoSymbolDescription);
       dominoSymbolView.gameObject.transform.SetParent(body.transform, false);
 
       float minY = dominoSymbolView.GetMinY();
@@ -227,7 +215,7 @@ namespace Domino {
       faceSymbolView.gameObject.transform.localPosition = new Vector3(-.4f, 0, -.001f);
 
       if (unitDescription.detailSymbolDescriptionById.Count != 0) {
-        symbolBarView = MakeSymbolBarView(clock, loader, unitDescription.detailSymbolDescriptionById, unitDescription.dominoDescription.large);
+        symbolBarView = MakeSymbolBarView(clock, loader, unitDescription.detailSymbolDescriptionById);
         symbolBarView.gameObject.transform.SetParent(body.transform, false);
       }
       
@@ -344,8 +332,7 @@ namespace Domino {
     private static SymbolBarView MakeSymbolBarView(
       IClock clock,
         ILoader loader,
-        List<(ulong, ExtrudedSymbolDescription)> symbolsIdsAndDescriptions,
-        bool large) {
+        List<(ulong, ExtrudedSymbolDescription)> symbolsIdsAndDescriptions) {
       SymbolBarView symbolBarView =
           SymbolBarView.Create(clock, loader, symbolsIdsAndDescriptions);
       symbolBarView.transform.localPosition = new Vector3(0, 1f, -.1f);
@@ -488,7 +475,7 @@ namespace Domino {
       var angles = Quaternion.LookRotation(horizontalCameraDirection, Vector3.up).eulerAngles;
       offsetter.transform.localRotation = Quaternion.Euler(angles);
       
-      body.transform.localPosition = new Vector3(.1f, 0, 0);
+      body.transform.localPosition = new Vector3(0, 0, 0);
       body.transform.localScale = new Vector3(.8f, .8f, .8f);
     }
   }

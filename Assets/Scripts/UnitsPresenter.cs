@@ -66,10 +66,10 @@ namespace Geomancer {
         }
         locToUnitIds[createUnit.initialUnit.location].Add(createUnit.id);
       } else if (message is DestroyUnitMessage destroyUnit) {
-        var loc = idToUnitPresenter[destroyUnit.unitViewId].location;
-        locToUnitIds[loc].Remove(destroyUnit.unitViewId);
-        idToUnitPresenter[destroyUnit.unitViewId].Destroy();
-        idToUnitPresenter.Remove(destroyUnit.unitViewId);
+        var loc = idToUnitPresenter[destroyUnit.unitId].location;
+        locToUnitIds[loc].Remove(destroyUnit.unitId);
+        idToUnitPresenter[destroyUnit.unitId].Destroy();
+        idToUnitPresenter.Remove(destroyUnit.unitId);
       // } else if (message is SetSurfaceColorMessage setSurfaceColor) {
       //   unitPresenters[setSurfaceColor.tileViewId].HandleMessage(message);
       // } else if (message is SetCliffColorMessage setCliffColor) {

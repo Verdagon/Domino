@@ -72,9 +72,9 @@ namespace Geomancer {
       if (message is CreateTileMessage createTile) {
         var tilePresenter =
             new NetworkTilePresenter(
-                loader, clock, timer, tileShapeMeshCache, elevationStepHeight, pattern, createTile.id,
+                loader, clock, timer, tileShapeMeshCache, elevationStepHeight, pattern, createTile.newTileId,
                 createTile.initialTile);
-        idToTilePresenters.Add(createTile.id, tilePresenter);
+        idToTilePresenters.Add(createTile.newTileId, tilePresenter);
         locToTilePresenters.Add(createTile.initialTile.location, tilePresenter);
       } else if (message is DestroyTileMessage destroyTile) {
         var loc = idToTilePresenters[destroyTile.tileViewId].location;
@@ -86,9 +86,9 @@ namespace Geomancer {
       } else if (message is SetElevationMessage setElevation) {
         idToTilePresenters[setElevation.tileViewId].HandleMessage(message);
       } else if (message is SetOverlayMessage setOverlay) {
-        idToTilePresenters[setOverlay.tileViewId].HandleMessage(message);
+        idToTilePresenters[setOverlay.tileId].HandleMessage(message);
       } else if (message is SetFeatureMessage setFeature) {
-        idToTilePresenters[setFeature.tileViewId].HandleMessage(message);
+        idToTilePresenters[setFeature.tileId].HandleMessage(message);
       } else if (message is SetCliffColorMessage setCliffColor) {
         idToTilePresenters[setCliffColor.tileViewId].HandleMessage(message);
       } else if (message is AddItemMessage addItem) {

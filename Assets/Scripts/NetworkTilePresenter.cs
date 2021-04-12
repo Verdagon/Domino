@@ -73,37 +73,18 @@ namespace Domino {
           elevationStepHeight,
           rotateDegrees,
           initialTile.elevation,
-          initialTile.topColor,
-          initialTile.sideColor,
-          TranslateMaybeInitialSymbol(RenderPriority.OVERLAY, initialTile.maybeOverlaySymbolDescription),
-          TranslateMaybeInitialSymbol(RenderPriority.FEATURE, initialTile.maybeFeatureSymbolDescription),
-          TranslateInitialSymbolMap(RenderPriority.ITEM, initialTile.itemSymbolDescriptionByItemId));
-    }
-
-    private static ExtrudedSymbolDescription TranslateMaybeInitialSymbol(
-        RenderPriority renderPriority,
-        InitialSymbol initialSymbol) {
-      if (initialSymbol == null) {
-        return null;
-      }
-      return new ExtrudedSymbolDescription(
-          renderPriority,
-          new SymbolDescription(
-              initialSymbol.symbolId,
-              initialSymbol.frontColor,
-              initialSymbol.rotationDegrees,
-              initialSymbol.sizePercent / 100f,
-              initialSymbol.outlined ? OutlineMode.OuterOutline : OutlineMode.NoOutline,
-              initialSymbol.outlineColor),
-          initialSymbol.depthPercent / 100f,
-          initialSymbol.sidesColor);
+          new DivideVector4Animation(Translation.Translate(initialTile.topColor), ConstantVector4Animation.All(255)),
+          new DivideVector4Animation(Translation.Translate(initialTile.sideColor), ConstantVector4Animation.All(255)),
+          Translation.TranslateMaybeInitialSymbol(RenderPriority.OVERLAY, initialTile.maybeOverlaySymbol),
+          Translation.TranslateMaybeInitialSymbol(RenderPriority.FEATURE, initialTile.maybeFeatureSymbol),
+          TranslateInitialSymbolMap(RenderPriority.ITEM, initialTile.itemIdToSymbol));
     }
 
     private static List<(ulong, ExtrudedSymbolDescription)> TranslateInitialSymbolMap(
         RenderPriority renderPriority, List<(ulong, InitialSymbol)> idToSymbol) {
       var result = new List<(ulong, ExtrudedSymbolDescription)>();
       foreach (var (id, initialSymbol) in idToSymbol) {
-        result.Add((id, TranslateMaybeInitialSymbol(renderPriority, initialSymbol)));
+        result.Add((id, Translation.TranslateMaybeInitialSymbol(renderPriority, initialSymbol)));
       }
       return result;
     }
@@ -114,17 +95,23 @@ namespace Domino {
 
     public void HandleMessage(IDominoMessage message) {
       if (message is SetSurfaceColorMessage setSurfaceColor) {
-        tileView.SetSurfaceColor(setSurfaceColor.frontColor);
+        tileView.SetSurfaceColor(
+            new DivideVector4Animation(
+                Translation.Translate(setSurfaceColor.frontColor),
+                ConstantVector4Animation.All(255)));
       } else if (message is SetCliffColorMessage setCliffColor) {
-        tileView.SetCliffColor(setCliffColor.sideColor);
+        tileView.SetCliffColor(
+            new DivideVector4Animation(
+                Translation.Translate(setCliffColor.sideColor),
+                ConstantVector4Animation.All(255)));
       } else if (message is SetElevationMessage setElevation) {
         Asserts.Assert(false);
       } else if (message is SetOverlayMessage setOverlay) {
-        tileView.SetOverlay(TranslateMaybeInitialSymbol(RenderPriority.OVERLAY, setOverlay.maybeOverlay));
+        tileView.SetOverlay(Translation.TranslateMaybeInitialSymbol(RenderPriority.OVERLAY, setOverlay.symbol));
       } else if (message is SetFeatureMessage setFeature) {
-        tileView.SetFeature(TranslateMaybeInitialSymbol(RenderPriority.OVERLAY, setFeature.maybeFeature));
+        tileView.SetFeature(Translation.TranslateMaybeInitialSymbol(RenderPriority.OVERLAY, setFeature.symbol));
       } else if (message is AddItemMessage addItem) {
-        tileView.AddItem(addItem.itemId, TranslateMaybeInitialSymbol(RenderPriority.ITEM, addItem.symbolDescription));
+        tileView.AddItem(addItem.itemId, Translation.TranslateMaybeInitialSymbol(RenderPriority.ITEM, addItem.symbolDescription));
       } else if (message is RemoveItemMessage removeItem) {
         tileView.RemoveItem(removeItem.itemId);
       } else if (message is ClearItemsMessage clearItems) {

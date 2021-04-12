@@ -17,7 +17,7 @@ namespace Domino {
     public readonly IVector4Animation sideColor;
     public readonly ExtrudedSymbolDescription maybeOverlaySymbolDescription;
     public readonly ExtrudedSymbolDescription maybeFeatureSymbolDescription;
-    public readonly List<(ulong, ExtrudedSymbolDescription)> itemSymbolDescriptionByItemId;
+    public readonly List<(ulong, ExtrudedSymbolDescription)> itemIdToSymbol;
 
     public TileDescription(
         float elevationStepHeight,
@@ -28,7 +28,7 @@ namespace Domino {
         IVector4Animation sideColor,
         ExtrudedSymbolDescription maybeOverlaySymbolDescription,
         ExtrudedSymbolDescription maybeFeatureSymbolDescription,
-        List<(ulong, ExtrudedSymbolDescription)> itemSymbolDescriptionByItemId) {
+        List<(ulong, ExtrudedSymbolDescription)> itemIdToSymbol) {
       this.elevationStepHeight = elevationStepHeight;
       this.tileRotationDegrees = tileRotationDegrees;
       this.depth = depth;
@@ -36,7 +36,7 @@ namespace Domino {
       this.sideColor = sideColor;
       this.maybeOverlaySymbolDescription = maybeOverlaySymbolDescription;
       this.maybeFeatureSymbolDescription = maybeFeatureSymbolDescription;
-      this.itemSymbolDescriptionByItemId = itemSymbolDescriptionByItemId;
+      this.itemIdToSymbol = itemIdToSymbol;
     }
 
     // public TileDescription WithTileSymbolDescription(ExtrudedSymbolDescription newTileSymbolDescription) {
@@ -48,7 +48,7 @@ namespace Domino {
     //     newTopColor,
     //     maybeOverlaySymbolDescription,
     //     maybeFeatureSymbolDescription,
-    //     itemSymbolDescriptionByItemId);
+    //     itemIdToSymbol);
     // }
 
     public override bool Equals(object obj) {
@@ -73,12 +73,12 @@ namespace Domino {
         return false;
       if (maybeFeatureSymbolDescription != null && !maybeFeatureSymbolDescription.Equals(that.maybeFeatureSymbolDescription))
         return false;
-      if (itemSymbolDescriptionByItemId.Count != that.itemSymbolDescriptionByItemId.Count)
+      if (itemIdToSymbol.Count != that.itemIdToSymbol.Count)
         return false;
-      for (int i = 0; i < itemSymbolDescriptionByItemId.Count; i++) {
-        if (itemSymbolDescriptionByItemId[i].Item1 != that.itemSymbolDescriptionByItemId[i].Item1)
+      for (int i = 0; i < itemIdToSymbol.Count; i++) {
+        if (itemIdToSymbol[i].Item1 != that.itemIdToSymbol[i].Item1)
           return false;
-        if (!itemSymbolDescriptionByItemId[i].Item2.Equals(that.itemSymbolDescriptionByItemId[i].Item2))
+        if (!itemIdToSymbol[i].Item2.Equals(that.itemIdToSymbol[i].Item2))
           return false;
       }
       return true;
@@ -94,8 +94,8 @@ namespace Domino {
         hashCode += 47 * maybeOverlaySymbolDescription.GetHashCode();
       if (maybeFeatureSymbolDescription != null)
         hashCode += 53 * maybeFeatureSymbolDescription.GetHashCode();
-      hashCode += 67 * itemSymbolDescriptionByItemId.Count;
-      foreach (var entry in itemSymbolDescriptionByItemId) {
+      hashCode += 67 * itemIdToSymbol.Count;
+      foreach (var entry in itemIdToSymbol) {
         hashCode += 87 * entry.Item1.GetHashCode() + 93 * entry.Item2.GetHashCode();
       }
       return hashCode;
@@ -201,7 +201,7 @@ namespace Domino {
       SetDepth(initialDescription.depth);
       SetOverlay(initialDescription.maybeOverlaySymbolDescription);
       SetFeature(initialDescription.maybeFeatureSymbolDescription);
-      foreach (var (itemId, itemDescription) in initialDescription.itemSymbolDescriptionByItemId) {
+      foreach (var (itemId, itemDescription) in initialDescription.itemIdToSymbol) {
         AddItem(itemId, itemDescription);
       }
 

@@ -10,6 +10,10 @@ namespace Domino {
       this.matrix = matrix;
     }
 
+    public static ConstantVector4Animation All(float i) {
+      return new ConstantVector4Animation(new Vector4(i, i, i, i));
+    }
+
     public Vector4 Get(long timeMs) {
       return matrix;
     }

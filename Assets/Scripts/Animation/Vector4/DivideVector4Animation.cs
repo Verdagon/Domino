@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Domino {
-  public class MultiplyVector4Animation : IVector4Animation {
+  public class DivideVector4Animation : IVector4Animation {
     IVector4Animation a;
     IVector4Animation b;
 
-    public MultiplyVector4Animation(IVector4Animation a, IVector4Animation b) {
+    public DivideVector4Animation(IVector4Animation a, IVector4Animation b) {
       this.a = a;
       this.b = b;
     }
@@ -16,7 +16,7 @@ namespace Domino {
       var leftVec = a.Get(timeMs);
       var rightVec = b.Get(timeMs);
       return new Vector4(
-          leftVec.x * rightVec.x, leftVec.y * rightVec.y, leftVec.z * rightVec.z, leftVec.w * rightVec.w);
+          leftVec.x / rightVec.x, leftVec.y / rightVec.y, leftVec.z / rightVec.z, leftVec.w / rightVec.w);
     }
 
     public IVector4Animation Simplify(long timeMs) {

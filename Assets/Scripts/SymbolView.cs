@@ -9,12 +9,6 @@ using static Domino.Instantiator;
 using Random = System.Random;
 
 namespace Domino {
-  public enum OutlineMode {
-    NoOutline = 0,
-    OuterOutline = 1,
-    CenteredOutline = 2
-  }
-
   public class SymbolDescription {
     public readonly SymbolId symbolId;
     public readonly IVector4Animation frontColor;
@@ -143,6 +137,7 @@ namespace Domino {
       var faceTranslate = centered ? new Vector3(-.5f, -.5f, 0) : new Vector3(0, 0, 0);
       faceTranslate.z = -symbolDescription.depth;
       faceObject.transform.localPosition = faceTranslate;
+      faceObject.GetComponent<MeshCollider>().enabled = false;
 
       var outlineTranslate = faceTranslate;
       outlineTranslate.z += 0.001f;
@@ -155,6 +150,7 @@ namespace Domino {
         outlineObject.transform.SetParent(gameObject.transform, false);
         outlineObject.transform.localPosition = outlineTranslate;
         outlineObject.transform.localScale = new Vector3(1, 1, symbolDescription.depth); //outlineExtruded ? 1 : 0);
+        outlineObject.GetComponent<MeshCollider>().enabled = false;
       } else if (symbolDescription.symbol.isOutlined == OutlineMode.CenteredOutline) {
         // var outlineExtruded = symbolDescription.extruded && (symbolDescription.symbol.isOutlined != OutlineMode.NoOutline);
         outlineObject = loader.NewQuad();
@@ -164,6 +160,7 @@ namespace Domino {
         outlineObject.transform.SetParent(gameObject.transform, false);
         outlineObject.transform.localPosition = outlineTranslate;
         outlineObject.transform.localScale = new Vector3(1, 1, symbolDescription.depth); //outlineExtruded ? 1 : 0);
+        outlineObject.GetComponent<MeshCollider>().enabled = false;
       }
 
       // this.renderPriority = symbolDescription.renderPriority;

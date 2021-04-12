@@ -7,7 +7,7 @@ namespace Geomancer {
     public static Pattern makePentagon9Pattern() {
       return new Pattern(
         "pentagon9",
-        new Vec2ImmListImmList(new Vec2ImmList[] { // cornersByShapeIndex
+        new Vec2ImmListImmList(new Vec2ImmList[] { // shapeIndexToCorners
           new Vec2ImmList(new Vec2[] { // corner for shape 0
             new Vec2(-132, -497),
             new Vec2(378, -497),
@@ -33,7 +33,7 @@ namespace Geomancer {
               new PatternSideAdjacency(0, 0, 1, 3),
               new PatternSideAdjacency(-1, -1, 7, 1)
             }),
-            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerAdjacenciesByCornerIndex
+            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerIndexToCornerAdjacencies
               new PatternCornerAdjacencyImmList(new PatternCornerAdjacency[] { // corner 0
                 new PatternCornerAdjacency(-1, -1, 7, 1),
                 new PatternCornerAdjacency(0, -1, 6, 0)
@@ -67,7 +67,7 @@ namespace Geomancer {
               new PatternSideAdjacency(0, 0, 0, 3),
               new PatternSideAdjacency(0, 0, 2, 0),
             }),
-            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerAdjacenciesByCornerIndex
+            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerIndexToCornerAdjacencies
               new PatternCornerAdjacencyImmList(new PatternCornerAdjacency[] { // corner 0
                 new PatternCornerAdjacency(0, 0, 2, 0),
                 new PatternCornerAdjacency(0, 0, 3, 4),
@@ -101,7 +101,7 @@ namespace Geomancer {
               new PatternSideAdjacency(0, 0, 4, 0),
               new PatternSideAdjacency(0, 0, 3, 4),
             }),
-            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerAdjacenciesByCornerIndex
+            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerIndexToCornerAdjacencies
               new PatternCornerAdjacencyImmList(new PatternCornerAdjacency[] { // corner 0
                 new PatternCornerAdjacency(0, 0, 1, 0),
                 new PatternCornerAdjacency(0, 0, 3, 4),
@@ -135,7 +135,7 @@ namespace Geomancer {
               new PatternSideAdjacency(0, 0, 1, 0),
               new PatternSideAdjacency(0, 0, 2, 4),
             }),
-            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerAdjacenciesByCornerIndex
+            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerIndexToCornerAdjacencies
               new PatternCornerAdjacencyImmList(new PatternCornerAdjacency[] { // corner 0
                 new PatternCornerAdjacency(0, 0, 2, 4),
                 new PatternCornerAdjacency(0, 0, 4, 0),
@@ -169,7 +169,7 @@ namespace Geomancer {
               new PatternSideAdjacency(0, 0, 5, 3),
               new PatternSideAdjacency(0, 0, 3, 0),
             }),
-            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerAdjacenciesByCornerIndex
+            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerIndexToCornerAdjacencies
               new PatternCornerAdjacencyImmList(new PatternCornerAdjacency[] { // corner 0
                 new PatternCornerAdjacency(0, 0, 2, 4),
                 new PatternCornerAdjacency(0, 0, 3, 0),
@@ -203,7 +203,7 @@ namespace Geomancer {
               new PatternSideAdjacency(0, 0, 4, 3),
               new PatternSideAdjacency(0, 0, 6, 1),
             }),
-            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerAdjacenciesByCornerIndex
+            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerIndexToCornerAdjacencies
               new PatternCornerAdjacencyImmList(new PatternCornerAdjacency[] { // corner 0
                 new PatternCornerAdjacency(-1, 0, 7, 0),
                 new PatternCornerAdjacency(0, 0, 6, 1),
@@ -237,7 +237,7 @@ namespace Geomancer {
               new PatternSideAdjacency(1, 1, 1, 2),
               new PatternSideAdjacency(0, 1, 0, 0),
             }),
-            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerAdjacenciesByCornerIndex
+            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerIndexToCornerAdjacencies
               new PatternCornerAdjacencyImmList(new PatternCornerAdjacency[] { // corner 0
                 new PatternCornerAdjacency(0, 1, 0, 0),
                 new PatternCornerAdjacency(-1, 0, 7, 1),
@@ -271,7 +271,7 @@ namespace Geomancer {
               new PatternSideAdjacency(0, 0, 4, 2),
               new PatternSideAdjacency(1, 0, 5, 0),
             }),
-            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerAdjacenciesByCornerIndex
+            new PatternCornerAdjacencyImmListImmList(new PatternCornerAdjacencyImmList[] { // cornerIndexToCornerAdjacencies
               new PatternCornerAdjacencyImmList(new PatternCornerAdjacency[] { // corner 0
                 new PatternCornerAdjacency(1, 0, 5, 0),
                 new PatternCornerAdjacency(1, 0, 6, 1),
