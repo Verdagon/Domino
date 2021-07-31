@@ -37,7 +37,7 @@ public class Root : MonoBehaviour {
 
     requester = gameObject.AddComponent<Requester>();
 
-    server = new DominoToGameConnection(requester, "http://127.0.0.1:8080", HandleMessage);
+    server = new DominoToGameConnection(requester, "http://localhost:8000/request", HandleMessage);
 
     clock = new SlowableTimerClock(1.0f);
 
@@ -93,28 +93,6 @@ public class Root : MonoBehaviour {
     } else if (message is CreateUnitMessage ||
         message is DestroyUnitMessage) {
       unitsPresenter.HandleMessage(message);
-
-      // var location = createUnit.initialUnit.location;
-      // var position = pattern.GetTileCenter(location).ToVec3().ToUnity();
-      // position.y += createUnit.initialUnit.elevation * elevationStepHeight;
-      // UnitView.Create(
-      //     loader, clock, clock, position,
-      //     new UnitDescription(
-      //         new DominoDescription(true, Vector4Animation.RED),
-      //         new ExtrudedSymbolDescription(
-      //             RenderPriority.DOMINO,
-      //             new SymbolDescription(
-      //                 new SymbolId("AthSymbols", 0x006A),
-      //                 Vector4Animation.BLUE,
-      //                 0,
-      //                 0,
-      //                 OutlineMode.WithOutline),
-      //             true,
-      //             Vector4Animation.PINK),
-      //         new List<(ulong, ExtrudedSymbolDescription)>(),
-      //         1,
-      //         1),
-      //     new Vector3(0, -1, 0));
     } else if (message is MakePanelMessage ||
         message is ScheduleCloseMessage ||
         message is AddRectangleMessage ||

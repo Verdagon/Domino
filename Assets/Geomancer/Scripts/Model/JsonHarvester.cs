@@ -22,9 +22,9 @@ namespace Geomancer {
       var location = ExpectMemberLocation(obj, "location");
       var domino = ExpectMemberSymbol(obj, "domino");
       var face = ExpectMemberSymbol(obj, "face");
-      var idToDetailSymbol = ParseIdToSymbolMap(ExpectMemberArray(obj, "idToDetailSymbol"));
-      var hpPercent = GetMaybeMemberInteger(obj, "hpPercent", out var hp) ? hp : 100;
-      var mpPercent = GetMaybeMemberInteger(obj, "mpPercent", out var mp) ? hp : 100;
+      var idToDetailSymbol = ParseIdToSymbolMap(ExpectMemberArray(obj, "id_to_detail_symbol"));
+      var hpPercent = GetMaybeMemberInteger(obj, "hp_percent", out var hp) ? hp : 100;
+      var mpPercent = GetMaybeMemberInteger(obj, "mp_percent", out var mp) ? hp : 100;
       return new InitialUnit(
           location, domino, face, idToDetailSymbol, hpPercent, mpPercent);
     }
@@ -34,17 +34,17 @@ namespace Geomancer {
       var maybeSides = GetMaybeMemberObject(obj, "sides", out var sides) ? ExpectSymbolSides(sides) : null;
       var maybeOutline = GetMaybeMemberObject(obj, "outline", out var outline) ? ExpectSymbolOutline(outline) : null;
       int rotationDegrees =
-          GetMaybeMemberInteger(obj, "rotationDegrees", out var newRotationDegrees) 
+          GetMaybeMemberInteger(obj, "rotation_degrees", out var newRotationDegrees) 
               ? newRotationDegrees : 0;
       int sizePercent =
-          GetMaybeMemberInteger(obj, "sizePercent", out var newSizePercent)
+          GetMaybeMemberInteger(obj, "size_percent", out var newSizePercent)
               ? newSizePercent : 100;
       return new InitialSymbol(
           glyph, maybeOutline, maybeSides, rotationDegrees, sizePercent);
     }
 
     public static SymbolId parseSymbolId(JSONObject obj) {
-      var fontName = ExpectMemberString(obj, "fontName");
+      var fontName = ExpectMemberString(obj, "font_name");
       var chaar = ExpectMemberInteger(obj, "unicode");
       return new SymbolId(fontName, chaar);
     }
@@ -116,13 +116,13 @@ namespace Geomancer {
     }
 
     public static InitialSymbolSides ExpectSymbolSides(JSONObject obj) {
-      var depthPercent = ExpectMemberInteger(obj, "depthPercent");
+      var depthPercent = ExpectMemberInteger(obj, "depth_percent");
       var color = ExpectMemberColorAnim(obj, "color");
       return new InitialSymbolSides(depthPercent, color);
     }
 
     public static InitialSymbolGlyph ExpectSymbolGlyph(JSONObject obj) {
-      var symbolId = parseSymbolId(ExpectMemberObject(obj, "symbolId"));
+      var symbolId = parseSymbolId(ExpectMemberObject(obj, "symbol_id"));
       var color = ExpectMemberColorAnim(obj, "color");
       return new InitialSymbolGlyph(symbolId, color);
     }
@@ -146,9 +146,9 @@ namespace Geomancer {
 
     public static Location ExpectLocation(JSONNode node) {
       if (node is JSONObject obj) {
-        int groupX = ExpectMemberInteger(obj, "groupX");
-        int groupY = ExpectMemberInteger(obj, "groupY");
-        int indexInGroup = ExpectMemberInteger(obj, "indexInGroup");
+        int groupX = ExpectMemberInteger(obj, "group_x");
+        int groupY = ExpectMemberInteger(obj, "group_y");
+        int indexInGroup = ExpectMemberInteger(obj, "index_in_group");
         return new Location(groupX, groupY, indexInGroup);
       } else {
         throw new Exception("Expected an array for a color!");
@@ -355,10 +355,10 @@ namespace Geomancer {
     public static InitialTile ParseInitialTile(JSONObject obj) {
       var location = ExpectMemberLocation(obj, "location");
       var elevation = ExpectMemberInteger(obj, "elevation");
-      var topColor = ParseColorAnim(ExpectMemberObject(obj, "topColor"));
-      var sideColor = ParseColorAnim(ExpectMemberObject(obj, "sideColor"));
-      var maybeOverlaySymbol = GetMaybeMemberObject(obj, "maybeOverlaySymbol", out var s) ? ParseInitialSymbol(s) : null;
-      var maybeFeatureSymbol = GetMaybeMemberObject(obj, "maybeFeatureSymbol", out var f) ? ParseInitialSymbol(f) : null;
+      var topColor = ParseColorAnim(ExpectMemberObject(obj, "top_color"));
+      var sideColor = ParseColorAnim(ExpectMemberObject(obj, "side_color"));
+      var maybeOverlaySymbol = GetMaybeMemberObject(obj, "maybe_overlay_symbol", out var s) ? ParseInitialSymbol(s) : null;
+      var maybeFeatureSymbol = GetMaybeMemberObject(obj, "maybe_feature_symbol", out var f) ? ParseInitialSymbol(f) : null;
       var itemIdToSymbol = new List<(ulong, InitialSymbol)>();
       return new InitialTile(location, elevation, topColor, sideColor, maybeOverlaySymbol, maybeFeatureSymbol, itemIdToSymbol);
     }
@@ -422,21 +422,21 @@ namespace Geomancer {
        if (node is JSONArray arr) {
          return new ConstantVec4iAnimation(ParseColor(node));
        } else if (node is JSONObject obj) {
-         if (GetMaybeMemberString(obj, "type", out var type)) {
+         if (GetMaybeMemberString(obj, "Vec4iAnimation", out var type)) {
            switch (type) {
-             case "multiply":
+             case "MultiplyVec4iAnimation":
                return new MultiplyVec4iAnimation(
                    ExpectMemberColorAnim(obj, "left"),
                    ExpectMemberColorAnim(obj, "right"));
-             case "divide":
+             case "DivideVec4iAnimation":
                return new DivideVec4iAnimation(
                    ExpectMemberColorAnim(obj, "left"),
                    ExpectMemberColorAnim(obj, "right"));
-             case "add":
+             case "AddVec4iAnimation":
                return new AddVec4iAnimation(
                    ExpectMemberColorAnim(obj, "left"),
                    ExpectMemberColorAnim(obj, "right"));
-             case "constant":
+             case "ConstantVec4iAnimation":
                return new ConstantVec4iAnimation(
                    ExpectMemberColor(obj, "val"));
              default:
@@ -466,13 +466,29 @@ namespace Geomancer {
          int alpha = arr.Count == 4 ? ExpectInteger(arr[2], "Color array element 0 not an integer!") : 255;
          return new Vec4i(red, green, blue, alpha);
        } else if (node is JSONObject obj) {
-         int red = ExpectMemberInteger(obj, "x");
-         int green = ExpectMemberInteger(obj, "y");
-         int blue = ExpectMemberInteger(obj, "z");
-         int alpha = GetMaybeMemberInteger(obj, "w", out var r) ? r : 255;
-         return new Vec4i(red, green, blue, alpha);
+         if (obj.HasKey("x")) {
+           int red = ExpectMemberInteger(obj, "x");
+           int green = ExpectMemberInteger(obj, "y");
+           int blue = ExpectMemberInteger(obj, "z");
+           int alpha = GetMaybeMemberInteger(obj, "w", out var r) ? r : 255;
+           return new Vec4i(red, green, blue, alpha);
+         } else if (obj.HasKey("r")) {
+           int red = ExpectMemberInteger(obj, "r");
+           int green = ExpectMemberInteger(obj, "g");
+           int blue = ExpectMemberInteger(obj, "b");
+           int alpha = GetMaybeMemberInteger(obj, "a", out var r) ? r : 255;
+           return new Vec4i(red, green, blue, alpha);
+         } else if (obj.HasKey("red")) {
+           int red = ExpectMemberInteger(obj, "red");
+           int green = ExpectMemberInteger(obj, "green");
+           int blue = ExpectMemberInteger(obj, "blue");
+           int alpha = GetMaybeMemberInteger(obj, "alpha", out var r) ? r : 255;
+           return new Vec4i(red, green, blue, alpha);
+         } else {
+           throw new Exception("Color object doesn't contain red field! (or r, or x)");
+         }
        } else {
-         throw new Exception("Expected an array for a color!");
+         throw new Exception("Expected an array or object for a color!");
        }
      }
      

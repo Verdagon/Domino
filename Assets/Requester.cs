@@ -31,7 +31,7 @@ namespace Domino {
       yield return uwr.SendWebRequest();
 
       if (uwr.isNetworkError) {
-        Debug.Log("Error While Sending: " + uwr.error);
+        Debug.Log("Error while sending to:\n" + url + "\nError: " + uwr.error);
         requesting = false;
         handleResponse(null);
       } else {

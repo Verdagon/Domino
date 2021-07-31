@@ -98,13 +98,13 @@ namespace Geomancer {
         } else {
           entries.Add(memberName, memberEntries);
         }
-        if (memberObj.HasKey("surfaceColor")) {
-          memberEntries.Add(new TopColorDescriptionForIDescription(JsonHarvester.ParseColorAnim(memberObj["surfaceColor"])));
-          memberObj.Remove("surfaceColor");
+        if (memberObj.HasKey("surface_color")) {
+          memberEntries.Add(new TopColorDescriptionForIDescription(JsonHarvester.ParseColorAnim(memberObj["surface_color"])));
+          memberObj.Remove("surface_color");
         }
-        if (memberObj.HasKey("wallColor")) {
-          memberEntries.Add(new SideColorDescriptionForIDescription(JsonHarvester.ParseColorAnim(memberObj["wallColor"])));
-          memberObj.Remove("wallColor");
+        if (memberObj.HasKey("wall_color")) {
+          memberEntries.Add(new SideColorDescriptionForIDescription(JsonHarvester.ParseColorAnim(memberObj["wall_color"])));
+          memberObj.Remove("wall_color");
         }
         if (JsonHarvester.GetMaybeMemberObject(memberObj, "overlay", out var overlayObj)) {
           memberEntries.Add(new OverlayDescriptionForIDescription(JsonHarvester.ParseInitialSymbol(overlayObj)));

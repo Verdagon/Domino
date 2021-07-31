@@ -22,9 +22,9 @@ namespace Domino {
 
     public void Start(int screenGW, int screenGH) {
       var obj = new JSONObject();
-      obj.Add("request", new JSONString("start"));
-      obj.Add("screenGW", new JSONNumber(screenGW));
-      obj.Add("screenGH", new JSONNumber(screenGH));
+      obj.Add("event_type", new JSONString("Start"));
+      obj.Add("screen_grid_width", new JSONNumber(screenGW));
+      obj.Add("screen_grid_height", new JSONNumber(screenGH));
       requester.Request(serverUrl, obj, (response) => {
         HandleResponse(response);
       });
@@ -32,13 +32,13 @@ namespace Domino {
 
     public void KeyDown(int c, bool leftShiftDown, bool rightShiftDown, bool ctrlDown, bool leftAltDown, bool rightAltDown) {
       var obj = new JSONObject();
-      obj.Add("request", new JSONString("keyDown"));
+      obj.Add("event_type", new JSONString("KeyDown"));
       obj.Add("unicode", c);
-      obj.Add("leftShiftDown", leftShiftDown);
-      obj.Add("rightShiftDown", rightShiftDown);
-      obj.Add("ctrlDown", ctrlDown);
-      obj.Add("leftAltDown", leftAltDown);
-      obj.Add("rightAltDown", rightAltDown);
+      obj.Add("left_shift_down", leftShiftDown);
+      obj.Add("right_shift_down", rightShiftDown);
+      obj.Add("ctrl_down", ctrlDown);
+      obj.Add("left_alt_down", leftAltDown);
+      obj.Add("right_alt_down", rightAltDown);
       requester.Request(serverUrl, obj, (response) => {
         HandleResponse(response);
       });
@@ -51,8 +51,8 @@ namespace Domino {
 
     public void SetHoveredLocation(ulong tileViewId, Location location) {
       var obj = new JSONObject();
-      obj.Add("request", new JSONString("setHoveredLocation"));
-      obj.Add("tileId", new JSONNumber(tileViewId));
+      obj.Add("request", new JSONString("SetHoveredLocation"));
+      obj.Add("tile_id", new JSONNumber(tileViewId));
       obj.Add("location", location != null ? location.ToJson() : (JSONNode)JSONNull.CreateOrGet());
       requester.Request(serverUrl, obj, (response) => {
         HandleResponse(response);
@@ -61,8 +61,8 @@ namespace Domino {
     
     public void LocationMouseDown(ulong tileViewId, Location location) {
       var obj = new JSONObject();
-      obj.Add("request", new JSONString("locationMouseDown"));
-      obj.Add("tileId", new JSONNumber(tileViewId));
+      obj.Add("request", new JSONString("LocationMouseDown"));
+      obj.Add("tile_id", new JSONNumber(tileViewId));
       obj.Add("location", location != null ? location.ToJson() : (JSONNode)JSONNull.CreateOrGet());
       requester.Request(serverUrl, obj, (response) => {
         HandleResponse(response);
